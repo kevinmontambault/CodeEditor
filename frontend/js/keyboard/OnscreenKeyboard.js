@@ -252,9 +252,9 @@ export default class OnscreenKeyboard extends HTMLElement{
         this.clickedButtonsMap = {};
         this.orientation = 'portrait';
         new ResizeObserver(([entry]) => {
-            this.windowSize.width = entry.contentRect.width;
-            this.windowSize.height = entry.contentRect.height;
-            this.orientation = this.windowSize.width>this.windowSize.height ? 'landscape' : 'portrait';
+            this.windowSize.width = entry.contentRect.height;
+            this.windowSize.height = entry.contentRect.width;
+            this.orientation = window.innerWidth>window.innerHeight ? 'landscape' : 'portrait';
         }).observe(document.body);
         this.lastHoveredElement = null;
 
@@ -311,7 +311,7 @@ export default class OnscreenKeyboard extends HTMLElement{
 
                 // when pointer is released
                 const upCallback = upEvent => {
-                    if(!upEvent.isTrusted || moveEvent.pointerId !== upEvent.pointerId){ return; }
+                    if(!upEvent.isTrusted || upEvent.pointerId !== downEvent.pointerId){ return; }
 
                     clearTimeout(downTimeout);
 
@@ -553,8 +553,13 @@ export default class OnscreenKeyboard extends HTMLElement{
         this.cursorPosition.x = newX;
         this.cursorPosition.y = newY;
 
-        this.cursor.style.left = `${Math.round(this.cursorPosition.x-9)}px`;
-        this.cursor.style.top = `${Math.round(this.cursorPosition.y-6)}px`;
+        if(this.orientation === 'portrait'){
+            this.cursor.style.left = `${Math.round(this.cursorPosition.y-6)}px`;
+            this.cursor.style.top = `${Math.round(this.windowSize.width - this.cursorPosition.x-9)}px`;
+        }else{
+            this.cursor.style.left = `${Math.round(this.cursorPosition.x-9)}px`;
+            this.cursor.style.top = `${Math.round(this.cursorPosition.y-6)}px`;
+        }
 
         // pointer enter and leave events
         const element = this.getElementUnderCursor();
@@ -566,7 +571,7 @@ export default class OnscreenKeyboard extends HTMLElement{
                 do{
                     curr.classList.remove('hovered');
                     curr = curr.parentNode;
-                }while(curr && (!element || !curr.contains(element)));
+                }while(curr && (!element || !curr.contains(element)) && curr.classList);
 
                 this.lastHoveredElement.dispatchEvent(new PointerEvent('pointerleave'));
                 this.lastHoveredElement.dispatchEvent(new MouseEvent('mouseleave'));
