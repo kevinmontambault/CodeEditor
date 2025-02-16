@@ -39,19 +39,19 @@ AddStyle(/*css*/`
         background-repeat: no-repeat;
         width: 19px;
         height: 13px;
-        background-image: url('/img/aero_arrow_l.cur');
+        background-image: url('/CodeEditor/img/aero_arrow_l.cur');
     }
 
     .onscreen-keybaord .cursor[type="auto"]{
-        background-image: url('/img/aero_arrow_l.cur');
+        background-image: url('/CodeEditor/img/aero_arrow_l.cur');
     }
     
     .onscreen-keyboard .cursor[type="pointer"]{
-        background-image: url('/img/aero_link_l.cur');
+        background-image: url('/CodeEditor/img/aero_link_l.cur');
     }
 
     .onscreen-keyboard .cursor[type="text"]{
-        background-image: url('/img/ibeam.png');
+        background-image: url('/CodeEditor/img/ibeam.png');
     }
 
     .onscreen-keyboard .center-container, .onscreen-keyboard .keyboard-container, .onscreen-keyboard .key-row{

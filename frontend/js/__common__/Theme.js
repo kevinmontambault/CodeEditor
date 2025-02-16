@@ -3,5 +3,5 @@ themeNode.setAttribute('rel', 'stylesheet');
 document.head.appendChild(themeNode);
 
 export default function set(themeName){
-    themeNode.setAttribute('href', `/themes/${themeName}.css`);
+    themeNode.setAttribute('href', `CodeEditor/themes/${themeName}.css`);
 };

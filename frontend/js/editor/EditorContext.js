@@ -16,6 +16,10 @@ AddStyle(/*css*/`
         height: 100%;
     }
 
+    .editor-context .error-text{
+        inset: 0;
+    }
+
     .editor-context .cm-cursor{
         border-left-color: white;
         border-width: 2px;
@@ -33,59 +37,20 @@ export default class EditorContext extends HTMLElement{
 
         this.innerHTML = /*html*/`
             <div class="code-area" tabindex="1"></div>
+            <div class="error-text hidden flex-center"></div>
         `;
 
-        // // multicursor and highlighting
-        // const cursors = {};
-        // this.addEventListener('pointerdown', event => {
-        //     const downPosition = this.editor.posAtCoords({x:event.clientX, y:event.clientY});
-        //     const newSelection = EditorSelection.range(downPosition, downPosition);
-
-        //     const selections = [newSelection];
-        //     if(event.ctrlKey || event.metaKey){
-        //         for(const range of this.editor.state.selection.ranges){
-        //             selections.push(range);
-        //         }
-        //     }
-
-        //     window.requestAnimationFrame(() => {
-        //         this.editor.dispatch({
-        //             selection: EditorSelection.create(selections, 0),
-        //             userEvent: 'select.pointer',
-        //         });
-
-        //         this.editor.focus();
-        //     });
-        // });
-
-        // this.addEventListener('pointerup', event => {
-        //     console.log(this.querySelector('.cm-content'))
-        // });
-
         this.editor = null;
-
-        // this.editor = CodeMirror.fromTextArea(this.querySelector('.code-area'), {
-        //     mode: 'javascript',
-        //     lineNumbers: true,
-        //     theme: 'default'
-        // });
 
         this.filePath = filePath;
         
         this.reload();
     };
 
-    posAtCoords(x, y){
-        const pos = this.editor.posAtCoords({x, y});
-        const lineAt = this.editor.state.doc.lineAt(pos);
-        return {line:lineAt.number, ch:pos-lineAt.from};
-    };
-
     async reload(){
-        const contentContainer = this.querySelector('.content-container');
-
         const createView = text => {
             this.editor = new EditorView({
+                parent: this.querySelector('.code-area'),
                 doc: text,
                 extensions: [
                     // keymap.of(Object.entries(Keybinds).map(([key, run]) => {key, run})),
@@ -93,7 +58,6 @@ export default class EditorContext extends HTMLElement{
                     drawSelection(),
                     EditorState.allowMultipleSelections.of(true),
                 ],
-                parent: this.querySelector('.code-area')
             });
 
             this.addEventListener('pointerdown', downEvent => {
@@ -139,6 +103,9 @@ export default class EditorContext extends HTMLElement{
             });
         };
 
+        const errorText = this.querySelector('.error-text');
+        errorText.classList.add('hidden');
+
         if(EditorContext.contentCache.has(this.filePath)){
             createView(EditorContext.contentCache.get(this.filePath));
         }else{
@@ -162,7 +129,8 @@ export default class EditorContext extends HTMLElement{
                 EditorContext.contentCache.set(this.filePath, response.text);
                 createView(response.text);
             }else{
-                contentContainer.innerText = 'Failed to fetch file';
+                errorText.innerText = 'Failed to fetch file';
+                errorText.classList.remove('hidden');
             }
         }
     };
