@@ -1,0 +1,42 @@
+<head>
+    <link rel="icon" href="/icons/icon-81x81.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+</head>
+
+<script src="MainWindow.js" type="module"></script>
+
+<body class="flex-row">
+    <main-window class="flex-fill"></main-window>
+</body>
+
+<style>
+    body{
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+        max-width: 6.75in;
+        max-height: 3in;
+        background-color: red;
+    }
+
+    @media screen and (orientation: portrait) {
+        body{
+            transform: rotate(90deg) translateY(-100%);
+            transform-origin: left top;
+            width: 100vh;
+            height: 100vw;
+            top: 0;
+            left: 0;
+        }
+    }
+
+    *{
+        pointer-events: none;
+    }
+
+    :root{
+        --editor-fontFamily: "Consolas, 'Courier New', monospace";
+    }
+</style>
