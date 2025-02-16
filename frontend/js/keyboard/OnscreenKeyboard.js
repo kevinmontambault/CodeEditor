@@ -273,11 +273,16 @@ export default class OnscreenKeyboard extends HTMLElement{
         
         // cursor movement
         let heldCount = 0;
+        let cursorStart = null;
         for(const touchpad of this.querySelectorAll('.touchpad')){
             touchpad.addEventListener('pointerdown', downEvent => {
                 if(!downEvent.isTrusted){ return; }
 
-                if(!heldCount){ this.classList.add('cursor-moving'); }
+                // its the first touchpad to be pressed
+                if(!heldCount){
+                    cursorStart = {x:this.cursorPosition.x, y:this.cursorPosition.y};
+                    this.classList.add('cursor-moving');
+                }
                 heldCount += 1;
 
                 // only dispatch mousedown after brief hold
@@ -291,7 +296,6 @@ export default class OnscreenKeyboard extends HTMLElement{
                 }, OnscreenKeyboard.CLICK_HOLD_TIME);
 
                 // move cursor relative to starting position
-                const cursorStart = {x:this.cursorPosition.x, y:this.cursorPosition.y};
                 const moveCallback = moveEvent => {
                     if(!moveEvent.isTrusted || moveEvent.pointerId !== downEvent.pointerId){ return; }
 
