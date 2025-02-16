@@ -250,9 +250,11 @@ export default class OnscreenKeyboard extends HTMLElement{
         this.cursorPosition = {x:50, y:50};
         this.windowSize = {width:0, height:0};
         this.clickedButtonsMap = {};
+        this.orientation = 'portrait';
         new ResizeObserver(([entry]) => {
             this.windowSize.width = entry.contentRect.width;
             this.windowSize.height = entry.contentRect.height;
+            this.orientation = this.windowSize.width>this.windowSize.height ? 'landscape' : 'portrait';
         }).observe(document.body);
         this.lastHoveredElement = null;
 
@@ -291,7 +293,7 @@ export default class OnscreenKeyboard extends HTMLElement{
                 // move cursor relative to starting position
                 const cursorStart = {x:this.cursorPosition.x, y:this.cursorPosition.y};
                 const moveCallback = moveEvent => {
-                    if(!moveEvent.isTrusted){ return; }
+                    if(!moveEvent.isTrusted || moveEvent.pointerId !== downEvent.pointerId){ return; }
 
                     const screenDelta = {x:moveEvent.clientX-downEvent.clientX, y:moveEvent.clientY-downEvent.clientY};
                     movementSum.x += Math.abs(moveEvent.movementX);
@@ -305,12 +307,9 @@ export default class OnscreenKeyboard extends HTMLElement{
 
                 // when pointer is released
                 const upCallback = upEvent => {
-                    if(!upEvent.isTrusted){ return; }
+                    if(!upEvent.isTrusted || moveEvent.pointerId !== upEvent.pointerId){ return; }
 
                     clearTimeout(downTimeout);
-
-                    // only accept events from the same cursor that generated the down event
-                    if(upEvent.pointerId !== downEvent.pointerId){ return; }
 
                     // remove callbacks
                     window.removeEventListener('pointermove', moveCallback);
