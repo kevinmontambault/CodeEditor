@@ -4,7 +4,7 @@ export default defineConfig({
     root: 'frontend', // Set the root directory to /www/
     publicDir: 'static',
     build: {
-        outDir: 'docs',
+        outDir: '../docs',
     },
     server: {
         port: 5173, // Change if needed
