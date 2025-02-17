@@ -1,4 +1,4 @@
-import { indentMore, indentLess, indentSelection, insertNewline, insertBlankLine, moveLineUp, moveLineDown } from '@codemirror/commands';
+import { indentMore, indentLess, insertNewline, insertBlankLine, moveLineUp, moveLineDown, insertTab } from '@codemirror/commands';
 import { cursorCharBackward, cursorCharForward, cursorDocEnd, cursorGroupBackward, cursorGroupForward, cursorLineBoundaryForward, cursorSubwordBackward, cursorSubwordForward, deleteGroupBackward, deleteGroupForward, selectCharBackward, selectCharForward, selectDocEnd, selectDocStart, selectGroupBackward, selectGroupForward, selectLineBoundaryBackward, selectLineBoundaryForward, selectSubwordBackward, selectSubwordForward } from '@codemirror/commands';
 import {
     deleteCharBackward,
@@ -14,6 +14,8 @@ import {
     cursorLineBoundaryBackward,
     cursorDocStart
 } from '@codemirror/commands';
+
+import {EditorSelection} from '@codemirror/state';
 
 export const insertCharacter = character => view => {
     view.dispatch({
@@ -58,12 +60,56 @@ const deleteSubwordBackward = view => {
     return true;
 };
 
+const addCursorUp = ({state, dispatch}) => {
+    const mainIndex = state.selection.mainIndex;
+    const ranges = [...state.selection.ranges];
+    const mainPosition = ranges[state.selection.mainIndex].head;
+    const mainLine = state.doc.lineAt(mainPosition);
+    const mainCol = mainPosition - mainLine.from;
+
+    for(const range of state.selection.ranges){
+        const line = state.doc.lineAt(range.head);
+        if(line.number === 1){ continue; }
+
+        const nextLine = state.doc.line(line.number - 1);
+        const newHead = Math.min(nextLine.from+mainCol, nextLine.to);
+        ranges.push(EditorSelection.range(newHead, newHead));
+    }
+
+    dispatch({selection:EditorSelection.create(ranges, mainIndex)});
+    return true;
+};
+
+const addCursorDown = ({state, dispatch}) => {
+    const mainIndex = state.selection.mainIndex;
+    const ranges = [...state.selection.ranges];
+    const mainPosition = ranges[state.selection.mainIndex].head;
+    const mainLine = state.doc.lineAt(mainPosition);
+    const mainCol = mainPosition - mainLine.from;
+
+    console.log(state.doc.lines)
+
+    for(const range of state.selection.ranges){
+        const line = state.doc.lineAt(range.head);
+        if(state.doc.lines === line.number){ continue; }
+
+        const nextLine = state.doc.line(line.number + 1);
+        const newHead = Math.min(nextLine.from+mainCol, nextLine.to);
+        ranges.push(EditorSelection.range(newHead, newHead));
+    }
+
+    dispatch({selection:EditorSelection.create(ranges, mainIndex)});
+    return true;
+};
+
 // standard key presses
 export default {
     'Ctrl-KeyA': selectAll,
 
     'Ctrl-KeyZ': undo,
     'Ctrl-Shift-KeyZ': redo,
+
+    'Space': insertCharacter(' '),
 
     'Backspace': deleteCharBackward,
     'Ctrl-Backspace': deleteGroupBackward,
@@ -93,10 +139,12 @@ export default {
 
     'ArrowUp': cursorLineUp,
     'Shift-ArrowUp': selectLineUp,
+    'Shift-Alt-ArrowUp': addCursorUp,
     'Ctrl-Shift-ArrowUp': moveLineUp,
 
     'ArrowDown': cursorLineDown,
     'Shift-ArrowDown': selectLineDown,
+    'Shift-Alt-ArrowDown': addCursorDown,
     'Ctrl-Shift-ArrowDown': moveLineDown,
 
     'Home': cursorLineBoundaryBackward,
@@ -109,7 +157,8 @@ export default {
     'Shift-Ctrl-End': selectDocEnd,
     'Ctrl-End': cursorDocEnd,
 
-    'Ctrl-BracketClose': indentMore,
-    'Ctrl-BracketOpen': indentLess,
-    'Tab': indentSelection
+    'Ctrl-BracketRight': indentMore,
+    'Ctrl-BracketLeft': indentLess,
+    'Tab': insertTab,
+    'Shift-Tab': indentLess,
 };

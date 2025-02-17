@@ -49,7 +49,7 @@ export class CodeEditor extends HTMLElement{
 
         this.fileContentCache = new Map();
 
-        // this.openFile('index.js', '$$$/CSPriceServer/index.js');
+        this.openFile('index.js', '$$$/CSPriceServer/index.js');
     };
 
     async openFile(fileName, filePath){

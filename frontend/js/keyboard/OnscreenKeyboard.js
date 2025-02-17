@@ -256,22 +256,25 @@ export default class OnscreenKeyboard extends HTMLElement{
         }).observe(document.body);
         this.lastHoveredElement = null;
 
-        // the element which is currently receiving key events;
-        this.focusedElement = null;
-
         // position the cursor once the document loads
         window.addEventListener('load', () => window.requestAnimationFrame(() => this.moveCursor(50, 50)));
-
-        window.addEventListener('focusin', ({target}) => {
-            target.classList.add('focused');
-            this.focusedElement = target;
-        });
-
-        window.addEventListener('focusout', ({target}) => {
-            target.classList.remove('focused');
-            this.focusedElement = null;
-        });
         
+        // focus is changed on pointerdown  
+        this.focusedElement = null;
+        window.addEventListener('pointerdown', downEvent => {
+            if(this.focusedElement){
+                this.focusedElement.classList.remove('focused');
+                this.focusedElement.dispatchEvent(new Event('focusout', {cancelable:true, bubbles:true}));
+                this.focusedElement = null;
+            }
+
+            if(downEvent.target.hasAttribute('focusable')){
+                this.focusedElement = downEvent.target;
+                this.focusedElement.classList.add('focused');
+                this.focusedElement.dispatchEvent(new Event('focusin', {cancelable:true, bubbles:true}));
+            }
+        });
+
         // cursor movement
         let heldCount = 0;
         let cursorStart = null;
@@ -294,7 +297,12 @@ export default class OnscreenKeyboard extends HTMLElement{
                 const downTimeout = setTimeout(() => {
                     if(movementSum.x + movementSum.y < OnscreenKeyboard.CLICK_MOVE_THRESH){
                         this.mouseDown(downEvent.buttons);
+                        movementSum.x = 0;
+                        movementSum.y = 0;
+                        cursorDelta.x = 0;
+                        cursorDelta.y = 0;
                         downTriggered = true;
+                        navigator.vibrate(30);
                     }
                 }, OnscreenKeyboard.CLICK_HOLD_TIME);
 
@@ -307,7 +315,10 @@ export default class OnscreenKeyboard extends HTMLElement{
                     movementSum.x += Math.abs(moveEvent.movementX);
                     movementSum.y += Math.abs(moveEvent.movementY);
 
-                    this.moveCursor(cursorStart.x+cursorDelta.x, cursorStart.y+cursorDelta.y);
+                    if(movementSum.x + movementSum.y > OnscreenKeyboard.CLICK_MOVE_THRESH){
+                        this.moveCursor(cursorStart.x+cursorDelta.x, cursorStart.y+cursorDelta.y);
+                    }
+
                     moveEvent.stopImmediatePropagation();
                     moveEvent.preventDefault();
                 };
@@ -390,7 +401,6 @@ export default class OnscreenKeyboard extends HTMLElement{
         this.lastMouseUp   = {timestamp:0, counter:0};
         this.lastClick     = {timestamp:0, counter:0};
         
-
         this.addEventListener('pointerup', upEvent => {
             const keyElement = this.pressedKeyMap[upEvent.pointerId];
             if(!keyElement){ return; }
@@ -701,15 +711,6 @@ export default class OnscreenKeyboard extends HTMLElement{
         }
 
         delete this.clickedButtonsMap[button];
-
-        if(this.focusedElement && this.focusedElement !== elementAtPosition){
-            this.focusedElement.blur();
-            this.focusedElement?.dispatchEvent(new Event('focusout', {cancelable:true, bubbles:true}));
-        }
-        if(OnscreenKeyboard.isElementFocusable(elementAtPosition)){
-            elementAtPosition.focus();
-            elementAtPosition.dispatchEvent(new Event('focusin', {cancelable:true, bubbles:true}));
-        }
 
         return true;
     };

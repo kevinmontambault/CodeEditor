@@ -22,9 +22,15 @@ AddStyle(/*css*/`
     }
 
     .editor-context .cm-cursor{
+        display: block !important;
         border-left-color: white;
         border-width: 2px;
     }
+
+    @keyframes cursor-blink{
+        0%, 49% { opacity: 0; }
+        50%, 100% { opacity: 1; }
+    }    
 `);
 
 export default class EditorContext extends HTMLElement{
@@ -35,11 +41,34 @@ export default class EditorContext extends HTMLElement{
         super();
 
         this.classList.add('editor-context', 'scroll-container', 'flex-fill', 'hidden');
+        this.toggleAttribute('focusable', true);
 
         this.innerHTML = /*html*/`
-            <div class="code-area" tabindex="1" readonly disabled></div>
+            <div class="code-area"></div>
             <div class="error-text hidden flex-center"></div>
         `;
+
+        // when the code area is focused, toggle the cursor animation on
+        this.addEventListener('focusin', () => {
+            const cursorLayer = this.querySelector('.cm-cursorLayer');
+            if(!cursorLayer){ return; }
+
+            Object.assign(cursorLayer.style, {
+                animationName: 'cursor-blink',
+                animationDuration: '1200ms',
+                animationIterationCount: 'infinite',
+            });
+        });
+
+        // when the element is unfocused, disable the cursor animation
+        this.addEventListener('focusout', () => {
+            const cursorLayer = this.querySelector('.cm-cursorLayer');
+            if(!cursorLayer){ return; }
+
+            Object.assign(cursorLayer.style, {
+                animation: 'none',
+            });
+        });
 
         this.editor = null;
 
@@ -66,7 +95,6 @@ export default class EditorContext extends HTMLElement{
                 const selections = [EditorSelection.range(downPosition, downPosition)];
                 if(downEvent.ctrlKey){ selections.push(...this.editor.state.selection.ranges); }
                 this.editor.dispatch({selection:EditorSelection.create(selections, 0)});
-                // this.editor.focus();
                 downEvent.preventDefault();
 
                 const moveCallback = moveEvent => {
@@ -79,7 +107,6 @@ export default class EditorContext extends HTMLElement{
                 window.addEventListener('pointermove', moveCallback);
                 window.addEventListener('pointerup', upEvent => {
                     window.removeEventListener('pointermove', moveCallback);
-                    // window.requestAnimationFrame(() => this.editor.focus());
                     upEvent.preventDefault();
                 }, {once:true});
             });
@@ -92,6 +119,8 @@ export default class EditorContext extends HTMLElement{
                 modifiers.push(downEvent.code);
 
                 const key = modifiers.join('-');
+
+                console.log(key, Keybinds[key])
 
                 if(Keybinds[key]?.(this.editor)){ return downEvent.preventDefault(); }
                 if(downEvent.key.length===1){ insertCharacter(downEvent.key)(this.editor); return downEvent.preventDefault(); }
