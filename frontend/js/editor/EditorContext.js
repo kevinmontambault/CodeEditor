@@ -1,4 +1,5 @@
 import AddStyle from '../__common__/Style.js';
+import Drive from '../__common__/Drive.js';
 
 import {drawSelection, EditorView, keymap} from '@codemirror/view';
 import {EditorSelection, EditorState} from '@codemirror/state';
@@ -36,7 +37,7 @@ export default class EditorContext extends HTMLElement{
         this.classList.add('editor-context', 'scroll-container', 'flex-fill', 'hidden');
 
         this.innerHTML = /*html*/`
-            <div class="code-area" tabindex="1"></div>
+            <div class="code-area" tabindex="1" readonly disabled></div>
             <div class="error-text hidden flex-center"></div>
         `;
 
@@ -65,7 +66,7 @@ export default class EditorContext extends HTMLElement{
                 const selections = [EditorSelection.range(downPosition, downPosition)];
                 if(downEvent.ctrlKey){ selections.push(...this.editor.state.selection.ranges); }
                 this.editor.dispatch({selection:EditorSelection.create(selections, 0)});
-                this.editor.focus();
+                // this.editor.focus();
                 downEvent.preventDefault();
 
                 const moveCallback = moveEvent => {
@@ -78,7 +79,7 @@ export default class EditorContext extends HTMLElement{
                 window.addEventListener('pointermove', moveCallback);
                 window.addEventListener('pointerup', upEvent => {
                     window.removeEventListener('pointermove', moveCallback);
-                    window.requestAnimationFrame(() => this.editor.focus());
+                    // window.requestAnimationFrame(() => this.editor.focus());
                     upEvent.preventDefault();
                 }, {once:true});
             });
@@ -110,19 +111,7 @@ export default class EditorContext extends HTMLElement{
             createView(EditorContext.contentCache.get(this.filePath));
         }else{
             this.classList.add('loading');
-
-            const response = await (async () => {
-                let response;
-                try{ response = await fetch(`/drive/${this.filePath}`); }
-                catch(err){ return {success:false, error:err}; }
-                if(!response.ok){ return {success:false, error:new Error(`Bad status (${response.status})`)}; }
-
-                let text;
-                try{ text = await response.text(); }
-                catch(err){ return {success:false, error:err}; }
-
-                return {success:true, text};
-            })();
+            const response = await Drive.readFile(this.filePath);
             this.classList.remove('loading');
 
             if(response.success){

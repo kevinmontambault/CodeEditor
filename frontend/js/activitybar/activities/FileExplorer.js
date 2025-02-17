@@ -1,4 +1,5 @@
 import AddStyle from '../../__common__/Style.js';
+import Drive from '../../__common__/Drive.js';
 import CodeEditor from '../../editor/CodeEditor.js';
 
 class FileEntry extends HTMLElement{
@@ -93,19 +94,7 @@ class FolderEntry extends HTMLElement{
 
         if(!this.content){
             dirents.classList.add('loading');
-
-            const response = await (async () => {
-                let response;
-                try{ response = await fetch(`/drive/${this.fullPath}`); }
-                catch(err){ return {success:false, error:err}; }
-                if(!response.ok){ return {success:false, error:new Error(`Bad status (${response.status})`)}; }
-
-                let text;
-                try{ text = await response.text(); }
-                catch(err){ return {success:false, error:err}; }
-
-                return {success:true, text};
-            })();
+            const response = await Drive.readFolder(this.fullPath);
             dirents.classList.remove('loading');
 
             if(!response.success){ return console.error(response.error); }

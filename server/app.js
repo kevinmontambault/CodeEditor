@@ -2,23 +2,17 @@ const fs = require('fs').promises;
 const path = require('path');
 const express = require('express');
 
-const config = require(path.join(__dirname, 'config.json'));
+const config = require(path.join(__dirname, '../config.json'));
 
 const app = express();
 app.use(express.json());
 
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'frontend/index.html')));
-app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'frontend/static/manifest.json')));
-app.use('/img', express.static(path.join(__dirname, 'frontend/static/img')));
-app.use('/themes', express.static(path.join(__dirname, 'frontend/static/themes')));
-app.use('/icons', express.static(path.join(__dirname, 'frontend/static/icons')));
-
-app.use('/js', express.static(path.join(__dirname, 'frontend/js')));
-
 // get a mounted directory
-app.get('/drive*', async (req, res) => {
+app.get('/fs/*', async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
     const rootPath = path.normalize(config.root);
-    const fullPath = path.normalize(path.join(rootPath, decodeURIComponent(req.url.slice(6))));
+    const fullPath = path.normalize(path.join(rootPath, decodeURIComponent(req.url.slice(4))));
     
     if(!fullPath.startsWith(rootPath)){ return res.status(403).end(); }
 
@@ -59,4 +53,4 @@ app.get('/drive*', async (req, res) => {
     }
 });
 
-const server = app.listen(4000, () => console.log('App running'));
+const server = app.listen(4001, () => console.log('App running'));

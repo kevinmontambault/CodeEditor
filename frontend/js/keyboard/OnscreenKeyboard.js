@@ -32,8 +32,6 @@ AddStyle(/*css*/`
 
     .onscreen-keyboard .cursor{
         position: fixed;
-        left: 50px;
-        top: 50px;
         background-size: contain;
         background-position: center;
         background-repeat: no-repeat;
@@ -247,7 +245,7 @@ export default class OnscreenKeyboard extends HTMLElement{
 
         // cursor variables
         this.cursor = this.querySelector('.cursor');
-        this.cursorPosition = {x:50, y:50};
+        this.cursorPosition = {x:0, y:0};
         this.windowSize = {width:0, height:0};
         this.clickedButtonsMap = {};
         this.orientation = 'portrait';
@@ -260,6 +258,9 @@ export default class OnscreenKeyboard extends HTMLElement{
 
         // the element which is currently receiving key events;
         this.focusedElement = null;
+
+        // position the cursor once the document loads
+        window.addEventListener('load', () => window.requestAnimationFrame(() => this.moveCursor(50, 50)));
 
         window.addEventListener('focusin', ({target}) => {
             target.classList.add('focused');
@@ -274,6 +275,7 @@ export default class OnscreenKeyboard extends HTMLElement{
         // cursor movement
         let heldCount = 0;
         let cursorStart = null;
+        let cursorDelta = null;
         for(const touchpad of this.querySelectorAll('.touchpad')){
             touchpad.addEventListener('pointerdown', downEvent => {
                 if(!downEvent.isTrusted){ return; }
@@ -281,6 +283,7 @@ export default class OnscreenKeyboard extends HTMLElement{
                 // its the first touchpad to be pressed
                 if(!heldCount){
                     cursorStart = {x:this.cursorPosition.x, y:this.cursorPosition.y};
+                    cursorDelta = {x:0, y:0};
                     this.classList.add('cursor-moving');
                 }
                 heldCount += 1;
@@ -299,11 +302,12 @@ export default class OnscreenKeyboard extends HTMLElement{
                 const moveCallback = moveEvent => {
                     if(!moveEvent.isTrusted || moveEvent.pointerId !== downEvent.pointerId){ return; }
 
-                    const screenDelta = {x:moveEvent.clientX-downEvent.clientX, y:moveEvent.clientY-downEvent.clientY};
+                    cursorDelta.x += moveEvent.movementX;
+                    cursorDelta.y += moveEvent.movementY;
                     movementSum.x += Math.abs(moveEvent.movementX);
                     movementSum.y += Math.abs(moveEvent.movementY);
 
-                    this.moveCursor(cursorStart.x+screenDelta.x, cursorStart.y+screenDelta.y);
+                    this.moveCursor(cursorStart.x+cursorDelta.x, cursorStart.y+cursorDelta.y);
                     moveEvent.stopImmediatePropagation();
                     moveEvent.preventDefault();
                 };

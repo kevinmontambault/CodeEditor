@@ -8,6 +8,7 @@ export default defineConfig({
         outDir: '../docs',
     },
     server: {
-        port: 5173, // Change if needed
+        host: '0.0.0.0',
+        port: 52066
     }
 });
