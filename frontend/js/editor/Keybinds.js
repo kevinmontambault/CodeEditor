@@ -87,8 +87,6 @@ const addCursorDown = ({state, dispatch}) => {
     const mainLine = state.doc.lineAt(mainPosition);
     const mainCol = mainPosition - mainLine.from;
 
-    console.log(state.doc.lines)
-
     for(const range of state.selection.ranges){
         const line = state.doc.lineAt(range.head);
         if(state.doc.lines === line.number){ continue; }
