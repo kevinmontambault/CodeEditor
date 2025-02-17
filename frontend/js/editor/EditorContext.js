@@ -120,8 +120,6 @@ export default class EditorContext extends HTMLElement{
 
                 const key = modifiers.join('-');
 
-                console.log(key, Keybinds[key])
-
                 if(Keybinds[key]?.(this.editor)){ return downEvent.preventDefault(); }
                 if(downEvent.key.length===1){ insertCharacter(downEvent.key)(this.editor); return downEvent.preventDefault(); }
 
