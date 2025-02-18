@@ -206,7 +206,10 @@ function initialize(table){
     }
 
     // refresh the row visibility whenever the container changes size
-    (new ResizeObserver(() => reload(table))).observe(table._tableContainer);
+    (new ResizeObserver(() => {
+        reload(table);
+        table.dispatchEvent(new Event('resize'));
+    })).observe(table._tableContainer);
 };
 
 function adoptRow(table, row){
@@ -281,6 +284,8 @@ function reload(table, forceReloadRows=false){
 
         table._forceReloadRows = false;
         table._queuedReload = null;
+
+        table.dispatchEvent(Object.assign(new Event('reload'), {state:structuredClone(newState)}));
         resolver();
     });
 };
@@ -435,6 +440,11 @@ export default class QuickTable extends HTMLElement{
         return this._rows[index];
     };
 
+    // returns the row at a specific y offset relative to the window
+    getRowAt(y){
+        return this._rows[Math.floor((y + this._renderedState.scrollPosition) / this._rowHeight)] || null;
+    };
+
     // Sorts the table based on the text within a column header
     sortByHeaderTitle(title, direction=0){
         const index = Array.from(this._header.children).findIndex(element => element.innerText === title);
@@ -488,15 +498,16 @@ export default class QuickTable extends HTMLElement{
         if(!this._scrollLoop){
             this._scrollLoop = requestAnimationFrame(function scrollLoop(){
                 const delta = this._queuedState.scrollTarget - this._queuedState.scrollPosition;
+
                 if(Math.abs(delta) < 1){
                     this._queuedState.scrollPosition = this._queuedState.scrollTarget;
                     this._scrollLoop = null;
                 }else{
                     this._queuedState.scrollPosition += delta / 3
                     this._scrollLoop = requestAnimationFrame(scrollLoop.bind(this));
+                    this.dispatchEvent(Object.assign(new Event('scroll'), ));
+                    reload(this);
                 }
-                
-                reload(this);
             }.bind(this));
         }
     };
