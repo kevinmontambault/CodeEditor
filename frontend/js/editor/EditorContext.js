@@ -129,6 +129,8 @@ export default class EditorContext extends HTMLElement{
         // lines = lines.map(line => line.replace('\t', tabSpaces).replace(new RegExp(`\\s{${EditorContext.spacesPerTab}}`, 'g'), `<span class="tab">${tabSpaces}</span>`));
         this.table.setRows(lines.map(lineText => new CodeLine(lineText)));
         this.updateLineGutterWidth();
+        
+        for(const range of this.ranges){ range.apply(this.lines); }
     };
 
     async setTheme(theme){
@@ -144,9 +146,27 @@ export default class EditorContext extends HTMLElement{
     };
 
     delete(ranges){
-        for(const range of SelectionRange.mergeRanges(ranges)){
-            console.log(range);
+        for(const range of SelectionRange.normalizeRanges(SelectionRange.mergeRanges(ranges)).sort((a, b) => Position.greaterThan(a.tail, b.tail) ? -1 : 1)){
+            const lineBounds = range.getPerLineRanges(this.lines).reverse();
+
+            const removingRows = [];
+            for(const bound of lineBounds){
+                const line = this.lines[bound.line];
+
+                console.log(bound)
+
+                if(bound.start===0 && (bound.end===-1 || bound.end===line.length)){
+                    removingRows.push(line);
+                }else if(bound.end === -1){
+                    line.text = line.text.slice(0, bound.start);
+                }else{
+                    line.text = line.text.slice(0, bound.start) + line.text.slice(bound.end, line.length);
+                }
+            }
+            this.table.removeRows(removingRows);
         }
+
+        this.setText(this.text);
     };
 
     insert(insertions){
@@ -195,7 +215,7 @@ export default class EditorContext extends HTMLElement{
     };
 
     get text(){
-        return this._rows.map(line => line.text).join('\n');
+        return this.lines.map(line => line.text).join('\n');
     };
 
     get lines(){

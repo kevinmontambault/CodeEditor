@@ -25,12 +25,57 @@ const getCharPositionRight = (editor, position) => {
     }else{ return new Position(position.line, Math.min(editor.lines[position.line].length, position.col)+1); }
 };
 
+const getWordPositionLeft = (editor, position) => {
+    if(position.col === 1){ return new Position(position.line, 0); }
+    if(position.col === 0){ return getCharPositionLeft(editor, position); }
+    const lineText = editor.lines[position.line].text;
+
+    let initialCol = position.col - 1;
+    let initialChar;
+    while(initialCol && /\s/.test(initialChar = lineText.charAt(initialCol))){ initialCol -= 1; }
+    if(initialChar === 0){ return new Position(position.line, 0); }
+
+    let col = initialCol - 1;
+    if(/[a-zA-Z0-9_-]/.test(initialChar)){
+        while(col && /[a-zA-Z0-9_-]/.test(lineText.charAt(col))){ col -= 1; }
+    }else{
+        while(col && /[^a-zA-Z0-9_-]/.test(lineText.charAt(col))){ col -= 1; }
+    }
+
+    return new Position(position.line, col+1);
+};
+
+const getWordPositionRight = (editor, position) => {
+    const lineText = editor.lines[position.line].text;
+    if(position.col === lineText.length-1){ return new Position(position.line, lineText.length); }
+    if(position.col === lineText.length){ return getCharPositionRight(editor, position); }
+
+    let initialCol = position.col;
+    let initialChar;
+    while(initialCol<lineText.length && /\s/.test(initialChar = lineText.charAt(initialCol))){ initialCol += 1; }
+    if(initialCol === lineText.length){ return new Position(position.line, lineText.length); }
+
+    let col = initialCol;
+    if(/[a-zA-Z0-9_-]/.test(initialChar)){
+        while(initialCol<lineText.length && /[a-zA-Z0-9_-]/.test(lineText.charAt(col))){ col += 1; }
+    }else{
+        while(initialCol<lineText.length && /[^a-zA-Z0-9_-]/.test(lineText.charAt(col))){ col += 1; }
+    }
+
+    return new Position(position.line, col);
+
+};
+
 export const deleteSelectionForward = editor => {
     const normalizedRanges = editor.ranges.map(range => range.normal());
+    const deleteRanges = normalizedRanges.map(range => {
+        if(!range.empty){ return range; }
+        return new SelectionRange(getCharPositionRight(editor, range.head), range.tail);
+    });
 
     return editor.exec({
-        delete: normalizedRanges,
-        ranges: normalizedRanges.map(range => new SelectionRange(range.head, range.tail))
+        delete: deleteRanges,
+        ranges: deleteRanges.map(range => new SelectionRange(range.tail, range.tail))
     });
 };
 
@@ -66,9 +111,21 @@ export const cursorMoveLeft = editor => {
     });
 };
 
+export const cursorWordLeft = editor => {
+    return editor.exec({
+        ranges: editor.ranges.map(range => new SelectionRange(getWordPositionLeft(editor, range.head)))
+    });
+};
+
 export const cursorMoveRight = editor => {
     return editor.exec({
         ranges: editor.ranges.map(range => new SelectionRange(getCharPositionRight(editor, range.head)))
+    });
+};
+
+export const cursorWordRight = editor => {
+    return editor.exec({
+        ranges: editor.ranges.map(range => new SelectionRange(getWordPositionRight(editor, range.head)))
     });
 };
 
@@ -90,9 +147,21 @@ export const selectCharLeft = editor => {
     });
 };
 
+export const selectWordLeft = editor => {
+    return editor.exec({
+        ranges: editor.ranges.map(range => new SelectionRange(getWordPositionLeft(editor, range.head), range.tail))
+    });
+};
+
 export const selectCharRight = editor => {
     return editor.exec({
         ranges: editor.ranges.map(range => new SelectionRange(getCharPositionRight(editor, range.head), range.tail))
+    });
+};
+
+export const selectWordRight = editor => {
+    return editor.exec({
+        ranges: editor.ranges.map(range => new SelectionRange(getWordPositionRight(editor, range.head), range.tail))
     });
 };
 

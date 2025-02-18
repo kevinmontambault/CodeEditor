@@ -2,11 +2,15 @@ import {
     cursorMoveUp,
     cursorMoveDown,
     cursorMoveLeft,
+    cursorWordLeft,
     cursorMoveRight,
+    cursorWordRight,
     selectLineUp,
     selectLineDown,
     selectCharLeft,
+    selectWordLeft,
     selectCharRight,
+    selectWordRight,
     deleteSelectionForward,
 } from './Commands.js';
 
@@ -32,17 +36,17 @@ export default {
     // 'Ctrl+Shift+Enter': insertNewline,
 
     'ArrowLeft': cursorMoveLeft,
-    // 'Ctrl+ArrowLeft': cursorGroupBackward,
+    'Ctrl+ArrowLeft': cursorWordLeft,
     // 'Alt+ArrowLeft': cursorSubwordBackward,
     'Shift+ArrowLeft': selectCharLeft,
-    // 'Ctrl+Shift+ArrowLeft': selectGroupBackward,
+    'Ctrl+Shift+ArrowLeft': selectWordLeft,
     // 'Shift+Alt+ArrowLeft': selectSubwordBackward,
 
     'ArrowRight': cursorMoveRight,
-    // 'Ctrl+ArrowRight': cursorGroupForward,
+    'Ctrl+ArrowRight': cursorWordRight,
     // 'Alt+ArrowRight': cursorSubwordForward,
     'Shift+ArrowRight': selectCharRight,
-    // 'Ctrl+Shift+ArrowRight': selectGroupForward,
+    'Ctrl+Shift+ArrowRight': selectWordRight,
     // 'Shift+Alt+ArrowRight': selectSubwordForward,
 
     'ArrowUp': cursorMoveUp,

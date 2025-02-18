@@ -123,6 +123,36 @@ export default class SelectionRange{
         return Position.greaterThan(this.head, this.tail);
     };
 
+    getPerLineRanges(lines){
+        if(this.head.line === this.tail.line){
+            if(this.isRightFacing()){ return [{line:this.head.line, start:this.tail.col, end:this.head.col}]; }
+            return [{line:this.head.line, start:this.head.col, end:this.tail.col}];
+        }
+
+        const lineRanges = [];
+        if(this.isRightFacing()){
+            lineRanges.push({line:this.tail.line, start:this.tail.col, end:-1});
+
+            for(let lineIndex=this.tail.line+1; lineIndex<this.head.line; lineIndex++){
+                lineRanges.push({line:lineIndex, start:0, end:-1});
+            }
+
+            lineRanges.push({line:this.head.line, start:0, end:this.head.col});
+        }
+
+        else{
+            lineRanges.push({line:this.head.line, start:this.head.col, end:-1});
+
+            for(let lineIndex=this.head.line+1; lineIndex<this.tail.line; lineIndex++){
+                lineRanges.push({line:lineIndex, start:0, end:lines[lineIndex].length});
+            }
+
+            lineRanges.push({line:this.col.line, start:0, end:this.tail.col});
+        }
+
+        return lineRanges;
+    };
+
     apply(lines){
         this.clear();
 
