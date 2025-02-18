@@ -72,17 +72,28 @@ export default class EditorContext extends HTMLElement{
         this.addEventListener('focusout', () => {
         });
 
-        //
+        // cursor selection and dragging
         this.addEventListener('pointerdown', downEvent => {
-            const position = this.getPositionAt(downEvent.offsetX, downEvent.offsetY);
+            const downPosition = this.getPositionAt(downEvent.offsetX, downEvent.offsetY);
 
-            const selectedLine = this.lines[position.line];
+            const selectedLine = this.lines[downPosition.line];
             if(!selectedLine){ return; }
             
-            const newPosition = new SelectionRange(new Position(position.line, Math.min(position.col, selectedLine.length)));
+            const newPosition = new SelectionRange(new Position(downPosition.line, Math.min(downPosition.col, selectedLine.length)));
+            const ranges = downEvent.ctrlKey ? [...this.ranges, newPosition] : [newPosition];
 
-            if(downEvent.ctrlKey){ this.select([...this.ranges, newPosition]); }
-            else{ this.select([newPosition]); }
+            const moveCallback = moveEvent => {
+                const movePosition = this.getPositionAt(moveEvent.offsetX, moveEvent.offsetY);
+                newPosition.head = movePosition;
+                this.select(ranges);
+            };
+
+            window.addEventListener('pointermove', moveCallback);
+            window.addEventListener('pointerup', upEvent => {
+                window.removeEventListener('pointermove', moveCallback);
+            }, {once:true});
+
+            this.select(ranges);
         });
 
         this.addEventListener('keydown', downEvent => {
@@ -129,7 +140,7 @@ export default class EditorContext extends HTMLElement{
         // lines = lines.map(line => line.replace('\t', tabSpaces).replace(new RegExp(`\\s{${EditorContext.spacesPerTab}}`, 'g'), `<span class="tab">${tabSpaces}</span>`));
         this.table.setRows(lines.map(lineText => new CodeLine(lineText)));
         this.updateLineGutterWidth();
-        
+
         for(const range of this.ranges){ range.apply(this.lines); }
     };
 
