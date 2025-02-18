@@ -15,14 +15,14 @@ const getCharPositionLeft = (editor, position) => {
     if(position.col <= 0){
         if(position.line === 0){ return new Position(0, 0); }
         else{ return new Position(position.line-1, editor.lines[position.line-1].length); }
-    }else{ return new Position(position.line, position.col-1); }
+    }else{ return new Position(position.line, Math.min(editor.lines[position.line].length, position.col)-1); }
 };
 
 const getCharPositionRight = (editor, position) => {
     if(position.col >= editor.lines[position.line].length){
         if(position.line === editor.lines.length-1){ return new Position(position.line, position.col); }
         else{ return new Position(position.line+1, 0); }
-    }else{ return new Position(position.line, position.col+1); }
+    }else{ return new Position(position.line, Math.min(editor.lines[position.line].length, position.col)+1); }
 };
 
 export const deleteSelectionForward = editor => {
