@@ -63,7 +63,21 @@ const getWordPositionRight = (editor, position) => {
     }
 
     return new Position(position.line, col);
+};
 
+export const getWordBoundsAtPosition = (editor, position) => {
+    const line = editor.lines[position.line];
+    if(!line){ return null; }
+
+    const lineText = line.text;
+
+    let start = position.col;
+    while(start && /\w/.test(lineText.charAt(start-1))){ start -= 1; }
+
+    let end = position.col;
+    while(end<lineText.length && /\w/.test(lineText.charAt(end))){ end += 1; }
+
+    return {start, end};
 };
 
 export const deleteSelectionForward = editor => {

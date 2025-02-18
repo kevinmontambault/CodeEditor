@@ -1,7 +1,7 @@
 import AddStyle from '../__common__/Style.js';
 import Drive from '../__common__/Drive.js';
 
-import {insertCharacter} from './Commands.js';
+import {insertCharacter, getWordBoundsAtPosition} from './Commands.js';
 import Keybinds from './Keybinds.js';
 import CodeLine from './CodeLine.js';
 import Position from './Position.js';
@@ -94,6 +94,14 @@ export default class EditorContext extends HTMLElement{
             }, {once:true});
 
             this.select(ranges);
+        });
+
+        this.addEventListener('dblclick', downEvent => {
+            const downPosition = this.getPositionAt(downEvent.offsetX, downEvent.offsetY);
+            const wordBounds = getWordBoundsAtPosition(this, downPosition);
+            if(!wordBounds){ return; }
+
+            this.select([new SelectionRange(new Position(downPosition.line, wordBounds.end), new Position(downPosition.line, wordBounds.start))]);
         });
 
         this.addEventListener('keydown', downEvent => {
