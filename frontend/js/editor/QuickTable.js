@@ -1,4 +1,4 @@
-import AddStyle from './Style.js';
+import AddStyle from '../__common__/Style.js';
 
 AddStyle(/*css*/`
     .quick-table{

@@ -1,5 +1,6 @@
 export default new class Drive extends EventTarget{
-    static host = '192.168.0.23';
+    // static host = '192.168.0.23';
+    static host = '192.168.0.11';
     static port = '4001';
 
     async read(path){

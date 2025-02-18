@@ -1,8 +1,11 @@
 import AddStyle from '../__common__/Style.js';
 import Drive from '../__common__/Drive.js';
-import '../__common__/QuickTable.js';
 
+import {insertCharacter} from './Commands.js';
+import Keybinds from './Keybinds.js';
 import CodeLine from './CodeLine.js';
+import Position from './Position.js';
+import './QuickTable.js';
 
 import * as Shiki from 'shiki';
 import SelectionRange from './SelectionRange.js';
@@ -29,11 +32,6 @@ AddStyle(/*css*/`
     .editor-context .tab{
         border-left: 1px solid grey;
     }
-
-    @keyframes cursor-blink{
-        0%, 49% { opacity: 0; }
-        50%, 100% { opacity: 1; }
-    }    
 `);
 
 export default class EditorContext extends HTMLElement{
@@ -52,19 +50,16 @@ export default class EditorContext extends HTMLElement{
             <quick-table class="code-area"></quick-table>
         `;
 
-        this.cursorArea = this.querySelector('.cursor-area');
         this.table = this.querySelector('.code-area');
-        this.table.addEventListener('reload', ({state}) => {
-
-        });
-
         this.filePath = filePath;
+
+        this.keybinds = Keybinds;
 
         // editor font
         this.font      = null;
         this.fontSize  = 0;
         this.fontWidth = 0;
-        this.setFont("'Cascadia Mono', monospace", 10);
+        this.setFont("'Cascadia Mono', monospace", 14);
 
         // cursor selections
         this.ranges = [];
@@ -80,11 +75,29 @@ export default class EditorContext extends HTMLElement{
         //
         this.addEventListener('pointerdown', downEvent => {
             const position = this.getPositionAt(downEvent.offsetX, downEvent.offsetY);
-            this.select([new SelectionRange(position, {line:position.line+3, col:position.col + 3})]);
+
+            const selectedLine = this.lines[position.line];
+            if(!selectedLine){ return; }
+            
+            const newPosition = new SelectionRange(new Position(position.line, Math.min(position.col, selectedLine.length)));
+
+            if(downEvent.ctrlKey){ this.select([...this.ranges, newPosition]); }
+            else{ this.select([newPosition]); }
         });
 
         this.addEventListener('keydown', downEvent => {
-            console.log(downEvent)
+            const keyString = [];
+            if(downEvent.ctrlKey){ keyString.push('Ctrl'); }
+            if(downEvent.altKey){ keyString.push('Alt'); }
+            if(downEvent.shiftKey){ keyString.push('Shift'); }
+            keyString.push(downEvent.code);
+            const shortcutCode = keyString.join('+');
+
+            
+            if(this.keybinds[shortcutCode]?.(this)){ return downEvent.preventDefault(); }
+            if(downEvent.key.length === 1 && insertCharacter(downEvent.key)(this)){ return downEvent.preventDefault(); }
+
+            console.log(shortcutCode)
         });
 
         this.reload();
@@ -125,8 +138,19 @@ export default class EditorContext extends HTMLElement{
 
     select(ranges){
         for(const range of this.ranges){ range.clear(); }
-        for(const range of ranges){ range.apply(this.lines); }
-        this.ranges = ranges;
+        
+        this.ranges = SelectionRange.mergeRanges(ranges);
+        for(const range of this.ranges){ range.apply(this.lines); }
+    };
+
+    delete(ranges){
+        for(const range of SelectionRange.mergeRanges(ranges)){
+            console.log(range);
+        }
+    };
+
+    insert(insertions){
+
     };
 
     // updates how many pixels are needed to fit the line numbers
@@ -156,15 +180,18 @@ export default class EditorContext extends HTMLElement{
 
     // returns the line and column number of a given x/y position relative to the code window
     getPositionAt(x, y){
-        const line = Math.floor((y + this.table._renderedState.scrollPosition) / this.table._rowHeight);
-        const col = Math.floor((x - this.lineNumberGutterWidth) / this.fontWidth);
-        return {line, col};
+        return new Position(Math.floor((y + this.table._renderedState.scrollPosition) / this.table._rowHeight), Math.floor((x - this.lineNumberGutterWidth) / this.fontWidth));
     };
 
-    insertRange(head, tail=null){
-        if(tail === null){ tail = head; }
+    getLine(index){
+        return this._rows[index] || null;
+    };
 
-        this.ranges.push({head, tail});
+    exec(command){
+        if(command.delete?.length){ this.delete(command.delete); }
+        if(command.insert?.length){ this.insert(command.insert); }
+        if(command.ranges){ this.select(command.ranges); }
+        return true;
     };
 
     get text(){
