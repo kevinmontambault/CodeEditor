@@ -55,14 +55,14 @@ export default class EditorContext extends HTMLElement{
 
         this.keybinds = Keybinds;
 
-        // editor font
-        this.font      = null;
-        this.fontSize  = 0;
-        this.fontWidth = 0;
-        this.setFont("'Cascadia Mono', monospace", 14);
-
         // cursor selections
         this.ranges = [];
+
+        // editor font
+        this.fontFamily = null;
+        this.fontSize   = 0;
+        this.fontWidth  = 0;
+        this.setFont("'Cascadia Mono', monospace", 14);
 
         // when the code area is focused, toggle the cursor animation on
         this.addEventListener('focusin', () => {
@@ -214,9 +214,11 @@ export default class EditorContext extends HTMLElement{
         
         CodeLine.charWidth = this.fontWidth;
         this.fontSize = size;
+        this.fontFamily = font;
         
         this.updateLineGutterWidth();
         this.table.setRowHeight(size * 1.2);
+        this.select(this.ranges);
     };
 
     // returns the line and column number of a given x/y position relative to the code window

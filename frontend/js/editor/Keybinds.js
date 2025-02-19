@@ -27,6 +27,8 @@ import {
     deleteSelectionForward,
     addCursorUp,
     addCursorDown,
+    fontSizeUp,
+    fontSizeDown,
 } from './Commands.js';
 
 // standard key presses
@@ -88,4 +90,8 @@ export default {
     // 'Ctrl+BracketLeft': indentLess,
     // 'Tab': insertTab,
     // 'Shift+Tab': indentLess,
+
+
+    'Ctrl+Equal': fontSizeUp,
+    'Ctrl+Minus': fontSizeDown,
 };

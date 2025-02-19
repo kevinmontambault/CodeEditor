@@ -348,6 +348,16 @@ export const addCursorUp = editor => {
     });
 };
 
+export const fontSizeUp = editor => {
+    editor.setFont(editor.fontFamily, editor.fontSize + 1);
+    return true;
+};
+
+export const fontSizeDown = editor => {
+    editor.setFont(editor.fontFamily, Math.max(1, editor.fontSize - 1));
+    return true;
+};
+
 // const deleteSubwordForward = view => {
 //     if(!selectSubwordForward(view)){ return false; }
 

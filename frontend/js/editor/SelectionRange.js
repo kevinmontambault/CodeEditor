@@ -52,7 +52,7 @@ export class SelectionRangeHighlight extends HTMLElement{
         super();
 
         this.classList.add('selection-range-highlight');
-        
+
         if(head < tail){
             this.style.left = `${Math.min(line.length, head) * CodeLine.charWidth}px`;
             this.style.width = `${(Math.min(line.length, tail)-head) * CodeLine.charWidth}px`;
