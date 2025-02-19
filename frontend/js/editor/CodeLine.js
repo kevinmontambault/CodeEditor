@@ -16,7 +16,7 @@ AddStyle(/*css*/`
 
     .code-line .line-number{
         color: var(--editorLineNumber-foreground);
-        width: var(--line-number-gutter-width);
+        min-width: var(--line-number-gutter-width);
     }
 
     .code-line.selected .line-number{
