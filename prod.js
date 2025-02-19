@@ -7,6 +7,12 @@ const config = require(path.join(__dirname, 'config.json'));
 const app = express();
 app.use(express.json());
 
+/*
+
+test comment
+
+*/
+
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'frontend/index.html')));
 app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'frontend/static/manifest.json')));
 app.use('/img', express.static(path.join(__dirname, 'frontend/static/img')));

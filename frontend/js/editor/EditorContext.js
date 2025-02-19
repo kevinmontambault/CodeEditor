@@ -129,14 +129,13 @@ export default class EditorContext extends HTMLElement{
     };
 
     async setText(text){
-        const highlightedCode = await Shiki.codeToHtml(text, {lang:'js', theme:EditorContext.theme});
-        const lineTexts = highlightedCode.slice(0, -12).split('<span class="line">').slice(1);
-        if(lineTexts[lineTexts.length-1]?.length){ lineTexts.push(''); }
-        let lines = lineTexts.map(line => line.slice(0, -8));
+        let lines = text.replace(/\r\n/g, '\n').split('\n');
+        if(!lines.length || lines[lines.length-1] !== '\n'){ lines.push('\n'); }
 
         // const tabSpaces = ''.padStart(EditorContext.spacesPerTab, '');
         // lines = lines.map(line => line.replace('\t', tabSpaces).replace(new RegExp(`\\s{${EditorContext.spacesPerTab}}`, 'g'), `<span class="tab">${tabSpaces}</span>`));
-        this.table.setRows(lines.map(lineText => new CodeLine(lineText)));
+        let lastLine = null;
+        this.table.setRows(lines.map(lineText => (lastLine = new CodeLine(lineText, lastLine))));
         this.updateLineGutterWidth();
 
         for(const range of this.ranges){ range.apply(this.lines); }
@@ -156,7 +155,7 @@ export default class EditorContext extends HTMLElement{
 
     delete(ranges){
         for(const range of SelectionRange.normalizeRanges(SelectionRange.mergeRanges(ranges)).sort((a, b) => Position.greaterThan(a.tail, b.tail) ? -1 : 1)){
-            const lineBounds = range.getPerLineRanges(this.lines).reverse();
+            const lineBounds = range.getPerLineRanges(this.lines);
 
             const removingRows = [];
             for(const bound of lineBounds){
@@ -167,15 +166,16 @@ export default class EditorContext extends HTMLElement{
                 if(bound.start===0 && (bound.end===-1 || bound.end===line.length)){
                     removingRows.push(line);
                 }else if(bound.end === -1){
-                    line.text = line.text.slice(0, bound.start);
+                    line.setText(line.text.slice(0, bound.start));
                 }else{
-                    line.text = line.text.slice(0, bound.start) + line.text.slice(bound.end, line.length);
+                    line.setText(line.text.slice(0, bound.start) + line.text.slice(bound.end, line.length));
                 }
+
+                break;
             }
+
             this.table.removeRows(removingRows);
         }
-
-        this.setText(this.text);
     };
 
     insert(insertions){

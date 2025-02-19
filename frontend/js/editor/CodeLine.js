@@ -1,4 +1,5 @@
 import AddStyle from '../__common__/Style.js';
+import {createHighlighter} from 'shiki'
 
 AddStyle(/*css*/`
     .code-line{
@@ -59,11 +60,24 @@ AddStyle(/*css*/`
     }
 `);
 
+const shiki = await createHighlighter({langs:['js'], themes:['monokai']});
+const shikiOptions = {lang:'js', theme:'monokai'};
+
+function hastToHTML(hast){
+    return (function closureToHTML(children){
+        return children.map(child => {
+            if(child.type === 'text'){ return child.value; }
+            if(child.type === 'element'){ return `<${child.tagName} ${Object.entries(child.properties).map(([n, v]) => `${n}="${v}"`)}>${closureToHTML(child.children)}</${child.tagName}>`; }
+            throw new Error('Unrecognized hast type', child.type);
+        }).join('');
+    })(hast.children[0].children[0].children[0].children);
+};
+
 export default class CodeLine extends HTMLElement{
     static charWidth = 0;
     static tabWidth = 3;
 
-    constructor(textContent){
+    constructor(codeText, prevoiusLine=null){
         super();
 
         this.classList.add('code-line', 'flex-row');
@@ -83,48 +97,86 @@ export default class CodeLine extends HTMLElement{
         this.selectionArea = this.querySelector('.selection-area');
         this.whitespaceLayer = this.querySelector('.whitespace-layer');
 
-        this.text = textContent;
+        this.prevLine = prevoiusLine;
+        this.nextLine = null;
+        if(prevoiusLine){ prevoiusLine.nextLine = this; }
+
+        this.text = '';
+
+        this.connected    = false;
+        this.rendered     = false;
+        this.grammarState = null;
+
+        this.setText(codeText);
     };
 
     connectedCallback(){
-        this.lineNumberContainer.innerText = this.parentTable.getRowIndex(this);
+        this.connected = true;
+        this.render();
     };
 
     disconnectedCallback(){
-
+        this.connected = false;
     };
 
     insertSelectionHighlight(selectionHighlight){
         this.lineContentContainer.appendChild(selectionHighlight);
     };
 
-    get text(){
-        return this.textContentContainer.innerText;
+    setText(content){
+        this.text = content;
+
+        this.invalidateState();
+        this.render();
+
+        // const halfMargin = (CodeLine.charWidth-2) / 2;
+        // let gap = 0;
+        // this.whitespaceLayer.innerHTML = this.textContentContainer.innerText.split('').map(c => {
+        //     if(c === '\t'){ 
+        //         const line = `<span class="tab" style="margin-left:${gap*CodeLine.charWidth}px; width=${CodeLine.charWidth*CodeLine.tabWidth}px">   </span>`;
+        //         gap = 0;
+        //         return line;
+        //     }
+
+        //     if(c === ' '){
+        //         const line = `<span class="space" style="margin-left:${gap*CodeLine.charWidth + halfMargin}px; margin-right:${halfMargin}px"> </span>`;
+        //         gap = 0;
+        //         return line;
+        //     }
+
+        //     gap += 1;
+        // }).join('');
     };
-    
-    set text(value){
-        this.textContentContainer.innerHTML = value;
 
-        const halfMargin = (CodeLine.charWidth-2) / 2;
-        let gap = 0;
-        this.whitespaceLayer.innerHTML = this.textContentContainer.innerText.split('').map(c => {
-            if(c === '\t'){ 
-                const line = `<span class="tab" style="margin-left:${gap*CodeLine.charWidth}px; width=${CodeLine.charWidth*CodeLine.tabWidth}px">   </span>`;
-                gap = 0;
-                return line;
-            }
+    invalidateState(){
+        if(!this.rendered){ return; }
 
-            if(c === ' '){
-                const line = `<span class="space" style="margin-left:${gap*CodeLine.charWidth + halfMargin}px; margin-right:${halfMargin}px"> </span>`;
-                gap = 0;
-                return line;
-            }
+        this.rendered     = false;
+        this.grammarState = null;
+        this.hast         = null;
 
-            gap += 1;
-        }).join('');
+        this.nextLine?.invalidateState();
+    };
 
+    render(){
+        if(!this.connected){ return false; }
+        if(this.rendered){ return true; }
 
-        return value;
+        const options = this.prevLine ? Object.assign({grammarState:this.prevLine.getGrammarState()}, shikiOptions) : shikiOptions;
+        const hast = shiki.codeToHast(this.text, options);
+
+        this.textContentContainer.innerHTML = hastToHTML(hast);
+        this.lineNumberContainer.innerText = this.parentTable.getRowIndex(this);
+
+        this.rendered = true;
+        this.nextLine?.render();
+        return true;
+    };
+
+    getGrammarState(){
+        if(this.grammarState){ return this.grammarState; }
+        const options = this.prevLine ? Object.assign({grammarState:this.prevLine.getGrammarState()}, shikiOptions) : shikiOptions;
+        return this.grammarState = shiki.getLastGrammarState(this.text, options);
     };
 
     get length(){
