@@ -134,6 +134,18 @@ export const cursorWordLeft = editor => {
     });
 };
 
+export const cursorLineLeft = editor => {
+    return editor.exec({
+        ranges: editor.ranges.map(range => new SelectionRange(new Position(range.head.line, 0)))
+    });
+};
+
+export const cursorDocStart = editor => {
+    return editor.exec({
+        ranges: [new SelectionRange(new Position(0, 0))]
+    });
+};
+
 export const cursorMoveRight = editor => {
     return editor.exec({
         ranges: editor.ranges.map(range => {
@@ -146,6 +158,18 @@ export const cursorMoveRight = editor => {
 export const cursorWordRight = editor => {
     return editor.exec({
         ranges: editor.ranges.map(range => new SelectionRange(getWordPositionRight(editor, range.head)))
+    });
+};
+
+export const cursorLineRight = editor => {
+    return editor.exec({
+        ranges: editor.ranges.map(range => new SelectionRange(new Position(range.head.line, editor.lines[range.head.line].length)))
+    });
+};
+
+export const cursorDocEnd = editor => {
+    return editor.exec({
+        ranges: [new SelectionRange(new Position(editor.lines.length-1, editor.lines[editor.lines.length-1].length))]
     });
 };
 
@@ -173,6 +197,12 @@ export const selectWordLeft = editor => {
     });
 };
 
+export const selectLineLeft = editor => {
+    return editor.exec({
+        ranges: editor.ranges.map(range => new SelectionRange(new Position(range.head.line, 0), range.tail))
+    });
+};
+
 export const selectCharRight = editor => {
     return editor.exec({
         ranges: editor.ranges.map(range => new SelectionRange(getCharPositionRight(editor, range.head), range.tail))
@@ -183,6 +213,18 @@ export const selectWordRight = editor => {
     return editor.exec({
         ranges: editor.ranges.map(range => new SelectionRange(getWordPositionRight(editor, range.head), range.tail))
     });
+};
+
+export const selectLineRight = editor => {
+    return editor.exec({
+        ranges: editor.ranges.map(range => new SelectionRange(new Position(range.head.line, editor.lines[range.head.line].length), range.tail))
+    });
+};
+
+export const selectDocEnd = editor => {
+    // return editor.exec({
+    //     ranges: [new SelectionRange(new Position(editor.lines.length-1, editor.lines[editor.lines.length-1].length))]
+    // });
 };
 
 export const addCursorDown = editor => {
