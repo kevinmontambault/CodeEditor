@@ -14,9 +14,11 @@ import {
     selectCharLeft,
     selectWordLeft,
     selectLineLeft,
+    selectDocStart,
     selectCharRight,
     selectWordRight,
     selectLineRight,
+    selectDocEnd,
     deleteSelectionForward,
     addCursorUp,
     addCursorDown,
@@ -69,12 +71,12 @@ export default {
 
     'Home': cursorLineLeft,
     'Shift+Home': selectLineLeft,
-    // 'Shift+Ctrl+Home': selectDocStart,
+    'Ctrl+Shift+Home': selectDocStart,
     'Ctrl+Home': cursorDocStart,
 
     'End': cursorLineRight,
     'Shift+End': selectLineRight,
-    // 'Shift+Ctrl+End': selectDocEnd,
+    'Ctrl+Shift+End': selectDocEnd,
     'Ctrl+End': cursorDocEnd,
 
     // 'Ctrl+BracketRight': indentMore,

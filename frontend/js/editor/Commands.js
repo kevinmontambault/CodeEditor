@@ -203,6 +203,14 @@ export const selectLineLeft = editor => {
     });
 };
 
+export const selectDocStart = editor => {
+    const maxPosition = editor.ranges.map(range => range.max()).reduce((a, b) => Position.lessThan(a, b) ? a : b );
+
+    return editor.exec({
+        ranges: [new SelectionRange(new Position(0, 0), maxPosition)]
+    });
+};
+
 export const selectCharRight = editor => {
     return editor.exec({
         ranges: editor.ranges.map(range => new SelectionRange(getCharPositionRight(editor, range.head), range.tail))
@@ -222,9 +230,11 @@ export const selectLineRight = editor => {
 };
 
 export const selectDocEnd = editor => {
-    // return editor.exec({
-    //     ranges: [new SelectionRange(new Position(editor.lines.length-1, editor.lines[editor.lines.length-1].length))]
-    // });
+    const minPosition = editor.ranges.map(range => range.min()).reduce((a, b) => Position.lessThan(a, b) ? a : b );
+
+    return editor.exec({
+        ranges: [new SelectionRange(new Position(editor.lines.length-1, editor.lines[editor.lines.length-1].length), minPosition)]
+    });
 };
 
 export const addCursorDown = editor => {
