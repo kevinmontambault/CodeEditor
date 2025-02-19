@@ -12,6 +12,8 @@ import {
     selectCharRight,
     selectWordRight,
     deleteSelectionForward,
+    addCursorUp,
+    addCursorDown,
 } from './Commands.js';
 
 // standard key presses
@@ -51,12 +53,12 @@ export default {
 
     'ArrowUp': cursorMoveUp,
     'Shift+ArrowUp': selectLineUp,
-    // 'Shift+Alt+ArrowUp': addCursorUp,
+    'Shift+Alt+ArrowUp': addCursorUp,
     // 'Ctrl+Shift+ArrowUp': moveLineUp,
 
     'ArrowDown': cursorMoveDown,
     'Shift+ArrowDown': selectLineDown,
-    // 'Shift+Alt+ArrowDown': addCursorDown,
+    'Shift+Alt+ArrowDown': addCursorDown,
     // 'Ctrl+Shift+ArrowDown': moveLineDown,
 
     // 'Home': cursorLineBoundaryBackward,

@@ -109,6 +109,7 @@ export default class SelectionRange{
     // merge this range and a given range into a single range
     // returns false if such an operation is not possible
     merge(range){
+        if(range.empty){ return Position.equals(this.tail, range.head) || Position.equals(this.head, range.head)}
         if(!this.contains(range.head)){ return false; }
 
         if(this.isRightFacing()){

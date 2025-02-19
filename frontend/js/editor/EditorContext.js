@@ -107,8 +107,8 @@ export default class EditorContext extends HTMLElement{
         this.addEventListener('keydown', downEvent => {
             const keyString = [];
             if(downEvent.ctrlKey){ keyString.push('Ctrl'); }
-            if(downEvent.altKey){ keyString.push('Alt'); }
             if(downEvent.shiftKey){ keyString.push('Shift'); }
+            if(downEvent.altKey){ keyString.push('Alt'); }
             keyString.push(downEvent.code);
             const shortcutCode = keyString.join('+');
 

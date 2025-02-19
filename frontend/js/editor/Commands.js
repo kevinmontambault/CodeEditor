@@ -185,6 +185,18 @@ export const selectWordRight = editor => {
     });
 };
 
+export const addCursorDown = editor => {
+    return editor.exec({
+        ranges: editor.ranges.map(range => [range, new SelectionRange(getCharPositionDown(editor, range.head))]).flat()
+    });
+};
+
+export const addCursorUp = editor => {
+    return editor.exec({
+        ranges: editor.ranges.map(range => [range, new SelectionRange(getCharPositionUp(editor, range.head))]).flat()
+    });
+};
+
 // const deleteSubwordForward = view => {
 //     if(!selectSubwordForward(view)){ return false; }
 
