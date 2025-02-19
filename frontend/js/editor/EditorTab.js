@@ -97,7 +97,6 @@ export default class EditorTab extends HTMLElement{
         this.context.remove();
 
         const lastOpened = EditorTab.getLastOpenedTab();
-        console.log(lastOpened)
         if(lastOpened){ lastOpened.active = true; }
         
         return true;
