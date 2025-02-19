@@ -9,29 +9,41 @@ AddStyle(/*css*/`
         bottom: 0;
         background-color: #FFFFFF44;
         box-sizing: border-box;
+        min-width: 4px;
     }
 
     .selection-range-highlight.empty{
-        min-width: 0;
     }
 
     @keyframes cursor-blink{
         0%, 49% { border-color: #FFFFFFFF; }
         50%, 100%{ border-color: #FFFFFF00; }
-    } 
+    }
 
-    .selection-range-highlight.cursor-right{
+    .selection-range-highlight.cursor-right, .selection-range-highlight.cursor-left{
+        min-width: 0;
+    }
+
+    .selection-range-highlight.cursor-right::before{
+        content: "";
+        position: absolute;
+        right: 0;
         animation: cursor-blink 1.5s infinite;
         border-width: 2px;
         border-color: #FFFFFFFF;
         border-right-style: solid;
+        height: 100%;
     }
     
-    .selection-range-highlight.cursor-left{
+    .selection-range-highlight.cursor-left::before{
+        content: "";
+        position: absolute;
+        left: 0;
         animation: cursor-blink 1.5s infinite;
         border-width: 2px;
         border-color: #FFFFFFFF;
         border-left-style: solid;
+        height: 100%;
     }
 `);
 
