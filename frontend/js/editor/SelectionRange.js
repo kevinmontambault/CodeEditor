@@ -27,7 +27,7 @@ AddStyle(/*css*/`
     .selection-range-highlight.cursor-right::before{
         content: "";
         position: absolute;
-        right: 0;
+        right: -1px;
         animation: cursor-blink 1.5s infinite;
         border-width: 2px;
         border-color: #FFFFFFFF;
@@ -38,7 +38,6 @@ AddStyle(/*css*/`
     .selection-range-highlight.cursor-left::before{
         content: "";
         position: absolute;
-        left: 0;
         animation: cursor-blink 1.5s infinite;
         border-width: 2px;
         border-color: #FFFFFFFF;
