@@ -27,15 +27,41 @@ AddStyle(/*css*/`
         border-right: 3px solid transparent;
         height: 100%;
     }
+
+    .code-line .whitespace-layer{
+        display: flex;
+        align-items: center;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        z-index: 1;
+    }
     
-    .code-line .text-content{
+    .code-line .text-content, .code-line .whitespace-layer{
         font-family: var(--line-font-family);
         margin: 0;
+    }
+
+    .code-line .tab{
+        background-color: green;
+        width: 3em;
+        border: 1px solid red;
+        height: 0px;
+    }
+
+    .code-line .space{
+        display: inline-block;
+        height: 2px;
+        width: 2px;
+        border-radius: 100%;
+        background-color: var(--editor-background);
+        opacity: .5;
     }
 `);
 
 export default class CodeLine extends HTMLElement{
     static charWidth = 0;
+    static tabWidth = 3;
 
     constructor(textContent){
         super();
@@ -45,7 +71,8 @@ export default class CodeLine extends HTMLElement{
         this.innerHTML = /*html*/`
             <div class="line-number"></div>
             <div class="line-content relative">
-                <pre class="text-content">${textContent}</pre>
+                <pre class="text-content"></pre>
+                <pre class="whitespace-layer"></pre>
                 <div class="selection-area"></div>
             </div>
         `;
@@ -54,6 +81,9 @@ export default class CodeLine extends HTMLElement{
         this.lineContentContainer = this.querySelector('.line-content');
         this.textContentContainer = this.querySelector('.text-content');
         this.selectionArea = this.querySelector('.selection-area');
+        this.whitespaceLayer = this.querySelector('.whitespace-layer');
+
+        this.text = textContent;
     };
 
     connectedCallback(){
@@ -71,9 +101,30 @@ export default class CodeLine extends HTMLElement{
     get text(){
         return this.textContentContainer.innerText;
     };
-
+    
     set text(value){
-        return this.textContentContainer.innerText = value;
+        this.textContentContainer.innerHTML = value;
+
+        const halfMargin = (CodeLine.charWidth-2) / 2;
+        let gap = 0;
+        this.whitespaceLayer.innerHTML = this.textContentContainer.innerText.split('').map(c => {
+            if(c === '\t'){ 
+                const line = `<span class="tab" style="margin-left:${gap*CodeLine.charWidth}px; width=${CodeLine.charWidth*CodeLine.tabWidth}px">   </span>`;
+                gap = 0;
+                return line;
+            }
+
+            if(c === ' '){
+                const line = `<span class="space" style="margin-left:${gap*CodeLine.charWidth + halfMargin}px; margin-right:${halfMargin}px"> </span>`;
+                gap = 0;
+                return line;
+            }
+
+            gap += 1;
+        }).join('');
+
+
+        return value;
     };
 
     get length(){

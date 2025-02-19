@@ -172,6 +172,8 @@ export const insertCharacter = character => editor => {
     //         new SelectionRange({line:range.head.line-1, });
     //     })
     // });
+
+    return true;
 };
 
 export const cursorMoveUp = editor => {

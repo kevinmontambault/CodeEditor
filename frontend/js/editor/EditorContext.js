@@ -132,6 +132,7 @@ export default class EditorContext extends HTMLElement{
             if(response.success){
                 EditorContext.contentCache.set(this.filePath, response.text);
                 this.setText(response.text);
+                // this.setText(response.text.replace(/ /g, '\t'));
             }else{
                 // errorText.innerText = 'Failed to fetch file';
                 // errorText.classList.remove('hidden');
