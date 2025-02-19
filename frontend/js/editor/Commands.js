@@ -121,7 +121,10 @@ export const cursorMoveDown = editor => {
 
 export const cursorMoveLeft = editor => {
     return editor.exec({
-        ranges: editor.ranges.map(range => new SelectionRange(getCharPositionLeft(editor, range.head)))
+        ranges: editor.ranges.map(range => {
+            if(range.empty){ return new SelectionRange(getCharPositionLeft(editor, range.head)); }
+            return new SelectionRange(range.min());
+        })
     });
 };
 
@@ -133,7 +136,10 @@ export const cursorWordLeft = editor => {
 
 export const cursorMoveRight = editor => {
     return editor.exec({
-        ranges: editor.ranges.map(range => new SelectionRange(getCharPositionRight(editor, range.head)))
+        ranges: editor.ranges.map(range => {
+            if(range.empty){ return new SelectionRange(getCharPositionRight(editor, range.head)); }
+            return new SelectionRange(range.max());
+        })
     });
 };
 

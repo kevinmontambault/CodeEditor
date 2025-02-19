@@ -95,8 +95,15 @@ export default class SelectionRange{
 
     // returns a new range that is right-pointing
     normal(){
-        if(this.isRightFacing()){ return this; }
-        else{ return new SelectionRange(this.tail, this.head); }
+        return this.toRightFacing();
+    };
+
+    toRightFacing(){
+        return this.isRightFacing() ? this : new SelectionRange(this.tail, this.head);
+    };
+
+    toLeftFacing(){
+        return this.isLeftFacing() ? this : new SelectionRange(this.tail, this.head);
     };
 
     // merge this range and a given range into a single range
@@ -121,6 +128,14 @@ export default class SelectionRange{
     
     isRightFacing(){
         return Position.greaterThan(this.head, this.tail);
+    };
+
+    min(){
+        return this.isRightFacing() ? this.tail : this.head;
+    };
+    
+    max(){
+        return this.isLeftFacing() ? this.tail : this.head;
     };
 
     getPerLineRanges(lines){
