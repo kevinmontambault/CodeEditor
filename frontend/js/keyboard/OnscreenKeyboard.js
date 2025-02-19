@@ -67,6 +67,11 @@ AddStyle(/*css*/`
         justify-content: center;
         user-select: none;
         pointer-events: all;
+        box-sizing: border-box;
+    }
+
+    .onscreen-keyboard .key-row>div.locked{
+        border: 2px solid #FFFFFF;
     }
 
     .onscreen-keyboard .key-row>div>svg{
@@ -118,8 +123,9 @@ function duplicateMouseEvent(event){
 
 export default class OnscreenKeyboard extends HTMLElement{
     static CLICK_HOLD_TIME = 300;
+    static CLICK_MOVE_THRESH = 10;
     static DBL_CLICK_TIME = 300;
-    static CLICK_MOVE_THRESH = 6;
+    static KEY_LOCK_TIME = 300;
 
     static isElementFocusable(element){
         if(element.hasAttribute('tabindex')){
@@ -232,7 +238,7 @@ export default class OnscreenKeyboard extends HTMLElement{
                     </div>
                     
                     <div class="key-row flex-row collapsable">
-                        <div data-code="ShiftLeft"                                          style="width:6em"  >Shift</div>
+                        <div data-code="ShiftLeft"  lockable                                style="width:6em"  >Shift</div>
                         <div data-code="KeyZ"       data-key1="z" data-key2="Z" repeat caps                    >z</div>
                         <div data-code="KeyX"       data-key1="x" data-key2="X" repeat caps                    >x</div>
                         <div data-code="KeyC"       data-key1="c" data-key2="C" repeat caps                    >c</div>
@@ -243,16 +249,16 @@ export default class OnscreenKeyboard extends HTMLElement{
                         <div data-code="Comma"      data-key1="," data-key2="<" repeat                         >,</div>
                         <div data-code="Period"     data-key1="." data-key2=">" repeat                         >.</div>
                         <div data-code="Slash"      data-key1="/" data-key2="?" repeat                         >/</div>
-                        <div data-code="ShiftRight"                                         style="width:7.2em">Shift</div>
+                        <div data-code="ShiftRight" lockable                                style="width:7.2em">Shift</div>
                         <div data-code="ArrowUp"                                repeat                         ><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M480-528 296-344l-56-56 240-240 240 240-56 56-184-184Z"/></svg></div>
                     </div>
                     
                     <div class="key-row flex-row collapsable">
-                        <div data-code="ControlLeft"                       style="width:3.6em">Ctrl</div>
-                        <div data-code="AltLeft"                           style="width:3.6em">Alt</div>
+                        <div data-code="ControlLeft"  lockable             style="width:3.6em">Ctrl</div>
+                        <div data-code="AltLeft"      lockable             style="width:3.6em">Alt</div>
                         <div data-code="Space"        data-key1=" " repeat style="width:19.3em"></div>
-                        <div data-code="AltRight"                          style="width:3.6em">Alt</div>
-                        <div data-code="ControlRight"                      style="width:3.6em">Ctrl</div>
+                        <div data-code="AltRight"     lockable             style="width:3.6em">Alt</div>
+                        <div data-code="ControlRight" lockable             style="width:3.6em">Ctrl</div>
                         <div data-code="ArrowLeft"                  repeat                    ><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg></div>
                         <div data-code="ArrowRight"                 repeat                    ><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg></div>
                         <div data-code="ArrowDown"                  repeat                    ><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/></svg></div>
@@ -428,6 +434,10 @@ export default class OnscreenKeyboard extends HTMLElement{
                 downEvent.preventDefault();
                 downEvent.stopImmediatePropagation();
             });
+
+            if(keyElement.hasAttribute('lockable')){
+                keyElement.lockable = true;
+            }
         };
 
         // keeps track of the last timestamp some click events occured, so they can be counted up if occuring shortly after one another
@@ -469,6 +479,19 @@ export default class OnscreenKeyboard extends HTMLElement{
                     key.innerText = key.key2;
                     key.key = key.key2;
                 }
+            }
+
+            // potentially lock the element
+            if(keyElement.lockable){
+                if(keyElement.locked){
+                    keyElement.classList.remove('locked');
+                    keyElement.locked = false;
+                }else if(performance.now() - keyElement.lastPress < OnscreenKeyboard.KEY_LOCK_TIME){
+                    keyElement.classList.add('locked');
+                    keyElement.locked = true;
+                }
+
+                keyElement.lastPress = performance.now();
             }
 
             // only dispatch a key event if there is a focused element to receive it, and the keyboard key has a key code (isn't a custom action key)
@@ -521,64 +544,65 @@ export default class OnscreenKeyboard extends HTMLElement{
     releaseKeyElement(keyElement){
         keyElement.classList.remove('pressed');
         keyElement.pressedCount -= 1;
+
+        // key isn't actually fully released
+        if(keyElement.pressedCount || keyElement.locked){ return; }
         
         // handle a key that was fully released by all pointers
-        if(!keyElement.pressedCount){
-            this.pressedKeys.delete(keyElement.code);
+        this.pressedKeys.delete(keyElement.code);
 
-            // remove key repeat timeout if it exists
-            if(this.keyRepeatTimeout){
-                clearTimeout(this.keyRepeatTimeout);
-                this.keyRepeatTimeout = null;
+        // remove key repeat timeout if it exists
+        if(this.keyRepeatTimeout){
+            clearTimeout(this.keyRepeatTimeout);
+            this.keyRepeatTimeout = null;
+        }
+
+        // toggle the onscreen keyboard
+        if(keyElement.code === 'ToggleCollapsed'){ return this.classList.toggle('collapsed'); }
+
+        // change upper-case letters
+        if((keyElement.code === 'ShiftLeft' || keyElement.code === 'ShiftRight') && !this.shiftHeld){
+            if(!this.capsLockOn){
+                for(const capsableKey of this.capsableKeys){
+                    capsableKey.innerText = capsableKey.key1;
+                    capsableKey.key = capsableKey.key1;
+                }
             }
 
-            // toggle the onscreen keyboard
-            if(keyElement.code === 'ToggleCollapsed'){ return this.classList.toggle('collapsed'); }
+            for(const shiftableKey of this.shiftableKeys){
+                shiftableKey.innerText = shiftableKey.key1;
+                shiftableKey.key = shiftableKey.key1;
+            }
+        }
 
-            // change upper-case letters
-            if((keyElement.code === 'ShiftLeft' || keyElement.code === 'ShiftRight') && !this.shiftHeld){
-                if(!this.capsLockOn){
+        // release caps lock
+        if(keyElement.code === 'Capslock'){
+            this.capsLockOn = !this.capsLockOn;
+
+            if(!this.capsLockOn){
+                if(!this.shiftHeld){
                     for(const capsableKey of this.capsableKeys){
                         capsableKey.innerText = capsableKey.key1;
                         capsableKey.key = capsableKey.key1;
                     }
                 }
-
-                for(const shiftableKey of this.shiftableKeys){
-                    shiftableKey.innerText = shiftableKey.key1;
-                    shiftableKey.key = shiftableKey.key1;
+            }else{
+                for(const capsableKey of this.capsableKeys){
+                    capsableKey.innerText = capsableKey.key2;
+                    capsableKey.key = capsableKey.key2;
                 }
             }
+        }
 
-            // release caps lock
-            if(keyElement.code === 'Capslock'){
-                this.capsLockOn = !this.capsLockOn;
-
-                if(!this.capsLockOn){
-                    if(!this.shiftHeld){
-                        for(const capsableKey of this.capsableKeys){
-                            capsableKey.innerText = capsableKey.key1;
-                            capsableKey.key = capsableKey.key1;
-                        }
-                    }
-                }else{
-                    for(const capsableKey of this.capsableKeys){
-                        capsableKey.innerText = capsableKey.key2;
-                        capsableKey.key = capsableKey.key2;
-                    }
-                }
-            }
-
-            if(this.focusedElement){
-                this.focusedElement.dispatchEvent(Object.assign(new KeyboardEvent('keyup', {
-                    timestamp: performance.now(),
-                    shiftKey: this.shiftHeld,
-                    ctrlKey: this.ctrlHeld,
-                    altKey: this.altHeld,
-                    metaKey: this.metaHeld,
-                    key: keyElement.key,
-                }), {virtual:true}));
-            }
+        if(this.focusedElement){
+            this.focusedElement.dispatchEvent(Object.assign(new KeyboardEvent('keyup', {
+                timestamp: performance.now(),
+                shiftKey: this.shiftHeld,
+                ctrlKey: this.ctrlHeld,
+                altKey: this.altHeld,
+                metaKey: this.metaHeld,
+                key: keyElement.key,
+            }), {virtual:true}));
         }
     };
 

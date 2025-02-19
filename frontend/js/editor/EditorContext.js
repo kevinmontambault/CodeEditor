@@ -12,25 +12,13 @@ import SelectionRange from './SelectionRange.js';
 
 AddStyle(/*css*/`
     .editor-context{
+        position: relative;
         pointer-events: all;
         cursor: text;
     }
 
     .editor-context .code-area{
         pointer-events: all;
-    }
-
-    .editor-context .cursor-area{
-        position: absolute;
-    }
-
-    .editor-context .cursor{
-        border-left-color: white;
-        border-width: 2px;
-    }
-
-    .editor-context .tab{
-        border-left: 1px solid grey;
     }
 `);
 
