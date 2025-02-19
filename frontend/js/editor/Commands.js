@@ -26,11 +26,11 @@ const getCharPositionRight = (editor, position) => {
 };
 
 const getWordPositionLeft = (editor, position) => {
+    const lineText = editor.lines[position.line].text;
     let initialCol = Math.min(position.col, lineText.length) - 1;
 
     if(initialCol === 0){ return new Position(position.line, 0); }
     if(initialCol === -1){ return getCharPositionLeft(editor, position); }
-    const lineText = editor.lines[position.line].text;
 
     let initialChar;
     while(initialCol && /\s/.test(initialChar = lineText.charAt(initialCol))){ initialCol -= 1; }
