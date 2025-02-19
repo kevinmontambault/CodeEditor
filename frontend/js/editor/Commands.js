@@ -35,14 +35,14 @@ const getWordPositionLeft = (editor, position) => {
     while(initialCol && /\s/.test(initialChar = lineText.charAt(initialCol))){ initialCol -= 1; }
     if(initialChar === 0){ return new Position(position.line, 0); }
 
-    let col = initialCol - 1;
+    let col = initialCol;
     if(/[a-zA-Z0-9_-]/.test(initialChar)){
-        while(col && /[a-zA-Z0-9_-]/.test(lineText.charAt(col))){ col -= 1; }
+        while(col && /[a-zA-Z0-9_-]/.test(lineText.charAt(col-1))){ col -= 1; }
     }else{
-        while(col && /[^a-zA-Z0-9_-]/.test(lineText.charAt(col))){ col -= 1; }
+        while(col && /[^a-zA-Z0-9_-]/.test(lineText.charAt(col-1))){ col -= 1; }
     }
 
-    return new Position(position.line, col+1);
+    return new Position(position.line, col);
 };
 
 const getWordPositionRight = (editor, position) => {
