@@ -59,9 +59,71 @@ const getWordPositionRight = (editor, position) => {
 
     let col = initialCol;
     if(/[a-zA-Z0-9_-]/.test(initialChar)){
-        while(initialCol<lineText.length && /[a-zA-Z0-9_-]/.test(lineText.charAt(col))){ col += 1; }
+        while(col<lineText.length && /[a-zA-Z0-9_-]/.test(lineText.charAt(col))){ col += 1; }
     }else{
-        while(initialCol<lineText.length && /[^a-zA-Z0-9_-]/.test(lineText.charAt(col))){ col += 1; }
+        while(col<lineText.length && /[^a-zA-Z0-9_-]/.test(lineText.charAt(col))){ col += 1; }
+    }
+
+    return new Position(position.line, col);
+};
+
+const getSubwordPositionLeft = (editor, position) => {
+    const lineText = editor.lines[position.line].text;
+    let initialCol = Math.min(position.col, lineText.length) - 1;
+
+    if(initialCol === 0){ return new Position(position.line, 0); }
+    if(initialCol === -1){ return getCharPositionLeft(editor, position); }
+
+    let initialChar;
+    while(initialCol && /\s/.test(initialChar = lineText.charAt(initialCol))){ initialCol -= 1; }
+    if(initialChar === 0){ return new Position(position.line, 0); }
+
+    let col = initialCol;
+    if(/[a-z]/.test(initialChar)){
+        while(col && /[a-z]/.test(lineText.charAt(col-1))){ col -= 1; }
+        if((/[A-Z]/.test(lineText.charAt(col-1)) && /[a-z]/.test(lineText.charAt(col)))){ col -= 1; }
+    }else if(/[A-Z]/.test(initialChar)){
+        col -= 1;
+
+        if(/[a-z]/.test(lineText.charAt(col-1))){
+            while(col && /[a-z]/.test(lineText.charAt(col-1))){ col -= 1; }
+        }else{
+            while(col && /[A-Z]/.test(lineText.charAt(col-1))){ col -= 1; }
+        }
+    }else if(/[0-9]/.test(initialChar)){
+        while(col && /[0-9]/.test(lineText.charAt(col-1))){ col -= 1; }
+    }else{
+        while(col && /[^a-zA-Z0-9_-]/.test(lineText.charAt(col-1))){ col -= 1; }
+    }
+
+    return new Position(position.line, col);
+};
+
+const getSubwordPositionRight = (editor, position) => {
+    const lineText = editor.lines[position.line].text;
+    let initialCol = Math.min(position.col, lineText.length);
+
+    if(initialCol === lineText.length-1){ return new Position(position.line, lineText.length); }
+    if(initialCol === lineText.length){ return getCharPositionRight(editor, position); }
+
+    let initialChar;
+    while(initialCol<lineText.length && /\s/.test(initialChar = lineText.charAt(initialCol))){ initialCol += 1; }
+    if(initialCol === lineText.length){ return new Position(position.line, lineText.length); }
+
+    let col = initialCol;
+    if(/[a-z]/.test(initialChar)){
+        while(col<lineText.length && /[a-z]/.test(lineText.charAt(col))){ col += 1; }
+    }else if(/[A-Z]/.test(initialChar)){
+        col += 1;
+        if(/[a-z]/.test(lineText.charAt(col))){
+            while(col<lineText.length && /[a-z]/.test(lineText.charAt(col))){ col += 1; }
+        }else{
+            while(col<lineText.length && /[A-Z]/.test(lineText.charAt(col))){ col += 1; }
+        }
+    }else if(/[0-9]/.test(initialChar)){
+        while(col<lineText.length && /[0-9]/.test(lineText.charAt(col))){ col += 1; }
+    }else{
+        while(col<lineText.length && /[^a-zA-Z0-9_-]/.test(lineText.charAt(col))){ col += 1; }
     }
 
     return new Position(position.line, col);
@@ -73,11 +135,14 @@ export const getWordBoundsAtPosition = (editor, position) => {
 
     const lineText = line.text;
 
+    const testChar = lineText.charAt(position.col);
+    const type = /\w/.test(testChar) ? /\w/ : /\s/.test(testChar) ? /\s/ : /[^\w\s]/;
+
     let start = position.col;
-    while(start && /\w/.test(lineText.charAt(start-1))){ start -= 1; }
+    while(start && type.test(lineText.charAt(start-1))){ start -= 1; }
 
     let end = position.col;
-    while(end<lineText.length && /\w/.test(lineText.charAt(end))){ end += 1; }
+    while(end<lineText.length && type.test(lineText.charAt(end))){ end += 1; }
 
     return {start, end};
 };
@@ -136,6 +201,12 @@ export const cursorWordLeft = editor => {
     });
 };
 
+export const cursorSubwordLeft = editor => {
+    return editor.exec({
+        ranges: editor.ranges.map(range => new SelectionRange(getSubwordPositionLeft(editor, range.head)))
+    });
+};
+
 export const cursorLineLeft = editor => {
     return editor.exec({
         ranges: editor.ranges.map(range => new SelectionRange(new Position(range.head.line, 0)))
@@ -160,6 +231,12 @@ export const cursorMoveRight = editor => {
 export const cursorWordRight = editor => {
     return editor.exec({
         ranges: editor.ranges.map(range => new SelectionRange(getWordPositionRight(editor, range.head)))
+    });
+};
+
+export const cursorSubwordRight = editor => {
+    return editor.exec({
+        ranges: editor.ranges.map(range => new SelectionRange(getSubwordPositionRight(editor, range.head)))
     });
 };
 

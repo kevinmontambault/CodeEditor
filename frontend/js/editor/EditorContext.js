@@ -112,7 +112,6 @@ export default class EditorContext extends HTMLElement{
             keyString.push(downEvent.code);
             const shortcutCode = keyString.join('+');
 
-            
             if(this.keybinds[shortcutCode]?.(this)){ return downEvent.preventDefault(); }
             if(downEvent.key.length === 1 && insertCharacter(downEvent.key)(this)){ return downEvent.preventDefault(); }
 

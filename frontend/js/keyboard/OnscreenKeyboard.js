@@ -301,7 +301,12 @@ export default class OnscreenKeyboard extends HTMLElement{
         });
 
         // reroute keyboard events to focused element
-        const maybeDuplicateEvent = event => !event.virtual && this.focusedElement?.dispatchEvent(duplicateKeyboardEvent(event));
+        const maybeDuplicateEvent = event => {
+            if(event.virtual){ return; }
+            const newEvent = duplicateKeyboardEvent(event);
+            this.focusedElement?.dispatchEvent(newEvent);
+            if(newEvent.defaultPrevented){ event.preventDefault(); }
+        };
         window.addEventListener('keydown', maybeDuplicateEvent);
         window.addEventListener('keyup',   maybeDuplicateEvent);
 
