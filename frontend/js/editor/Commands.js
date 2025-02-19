@@ -26,11 +26,12 @@ const getCharPositionRight = (editor, position) => {
 };
 
 const getWordPositionLeft = (editor, position) => {
-    if(position.col === 1){ return new Position(position.line, 0); }
-    if(position.col === 0){ return getCharPositionLeft(editor, position); }
+    let initialCol = Math.min(position.col, lineText.length) - 1;
+
+    if(initialCol === 0){ return new Position(position.line, 0); }
+    if(initialCol === -1){ return getCharPositionLeft(editor, position); }
     const lineText = editor.lines[position.line].text;
 
-    let initialCol = position.col - 1;
     let initialChar;
     while(initialCol && /\s/.test(initialChar = lineText.charAt(initialCol))){ initialCol -= 1; }
     if(initialChar === 0){ return new Position(position.line, 0); }
@@ -47,10 +48,11 @@ const getWordPositionLeft = (editor, position) => {
 
 const getWordPositionRight = (editor, position) => {
     const lineText = editor.lines[position.line].text;
-    if(position.col === lineText.length-1){ return new Position(position.line, lineText.length); }
-    if(position.col === lineText.length){ return getCharPositionRight(editor, position); }
+    let initialCol = Math.min(position.col, lineText.length);
 
-    let initialCol = position.col;
+    if(initialCol === lineText.length-1){ return new Position(position.line, lineText.length); }
+    if(initialCol === lineText.length){ return getCharPositionRight(editor, position); }
+
     let initialChar;
     while(initialCol<lineText.length && /\s/.test(initialChar = lineText.charAt(initialCol))){ initialCol += 1; }
     if(initialCol === lineText.length){ return new Position(position.line, lineText.length); }
