@@ -9,7 +9,7 @@ AddStyle(/*css*/`
         bottom: 0;
         background-color: #FFFFFF44;
         box-sizing: border-box;
-        min-width: 4px;
+        min-width: .3em;
     }
 
     .selection-range-highlight.empty{
