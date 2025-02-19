@@ -142,7 +142,9 @@ export default class EditorContext extends HTMLElement{
 
     async setText(text){
         const highlightedCode = await Shiki.codeToHtml(text, {lang:'js', theme:EditorContext.theme});
-        let lines = highlightedCode.split('<span class="line">').slice(1).map(line => line.slice(0, -8));
+        const lineTexts = highlightedCode.slice(0, -12).split('<span class="line">').slice(1);
+        if(lineTexts[lineTexts.length-1]?.length){ lineTexts.push(''); }
+        let lines = lineTexts.map(line => line.slice(0, -8));
 
         // const tabSpaces = ''.padStart(EditorContext.spacesPerTab, '');
         // lines = lines.map(line => line.replace('\t', tabSpaces).replace(new RegExp(`\\s{${EditorContext.spacesPerTab}}`, 'g'), `<span class="tab">${tabSpaces}</span>`));

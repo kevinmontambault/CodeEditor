@@ -292,8 +292,8 @@ export default class OnscreenKeyboard extends HTMLElement{
 
             // try to find a focusable parent
             let target = downEvent.target;
-            while(target && !target.hasAttribute('focusable')){ target = target.parentNode; }
-            if(target){
+            while(target?.hasAttribute && !target.hasAttribute('focusable')){ target = target.parentNode; }
+            if(target?.hasAttribute){
                 this.focusedElement = target;
                 this.focusedElement.classList.add('focused');
                 this.focusedElement.dispatchEvent(new Event('focusin', {cancelable:true, bubbles:true}));
