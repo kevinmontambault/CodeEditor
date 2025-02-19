@@ -19,6 +19,7 @@ import {
     selectWordRight,
     selectLineRight,
     selectDocEnd,
+    selectAll,
     deleteSelectionForward,
     addCursorUp,
     addCursorDown,
@@ -26,7 +27,7 @@ import {
 
 // standard key presses
 export default {
-    // 'Ctrl+KeyA': selectAll,
+    'Ctrl+KeyA': selectAll,
 
     // 'Ctrl+KeyZ': undo,
     // 'Ctrl+Shift+KeyZ': redo,

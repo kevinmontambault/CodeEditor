@@ -211,6 +211,12 @@ export const selectDocStart = editor => {
     });
 };
 
+export const selectAll = editor => {
+    return editor.exec({
+        ranges: [new SelectionRange(new Position(editor.lines.length-1, editor.lines[editor.lines.length-1].length), new Position(0, 0))]
+    });
+};
+
 export const selectCharRight = editor => {
     return editor.exec({
         ranges: editor.ranges.map(range => new SelectionRange(getCharPositionRight(editor, range.head), range.tail))
