@@ -276,6 +276,12 @@ export const selectWordLeft = editor => {
     });
 };
 
+export const selectSubwordLeft = editor => {
+    return editor.exec({
+        ranges: editor.ranges.map(range => new SelectionRange(getSubwordPositionLeft(editor, range.head), range.tail))
+    });
+};
+
 export const selectLineLeft = editor => {
     return editor.exec({
         ranges: editor.ranges.map(range => new SelectionRange(new Position(range.head.line, 0), range.tail))
@@ -305,6 +311,12 @@ export const selectCharRight = editor => {
 export const selectWordRight = editor => {
     return editor.exec({
         ranges: editor.ranges.map(range => new SelectionRange(getWordPositionRight(editor, range.head), range.tail))
+    });
+};
+
+export const selectSubwordRight = editor => {
+    return editor.exec({
+        ranges: editor.ranges.map(range => new SelectionRange(getSubwordPositionRight(editor, range.head), range.tail))
     });
 };
 
