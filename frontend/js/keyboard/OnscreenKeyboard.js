@@ -90,8 +90,30 @@ AddStyle(/*css*/`
     }
 `);
 
-function intersects(bb, point){
-    return bb.left < point.x && bb.left+bb.width > point.x && bb.top < point.y && bb.top+bb.height > point.y;
+function duplicateKeyboardEvent(event){
+    return Object.assign(new KeyboardEvent(event.type, {
+        timestamp:  event.timestamp,
+        bubbles:    event.bubbles,
+        cancelable: event.cancelable,
+        shiftKey:   event.shiftKey,
+        ctrlKey:    event.ctrlKey,
+        altKey:     event.altKey,
+        metaKey:    event.metaKey,
+        code:       event.code,
+        key:        event.key,
+        detail:     event.detail,
+        view:       event.view,
+        composed:   event.composed,
+        srcElement: event.srcElement,
+        target:     event.target,
+        repeat:     event.repeat,
+    }), {virtual:true});
+};
+
+function duplicateMouseEvent(event){
+    return Object.assign(new MouseEvent(event.type, {
+        
+    }), {virtual:true});
 };
 
 export default class OnscreenKeyboard extends HTMLElement{
@@ -226,14 +248,14 @@ export default class OnscreenKeyboard extends HTMLElement{
                     </div>
                     
                     <div class="key-row flex-row collapsable">
-                        <div data-code="ControlLeft"         style="width:3.6em">Ctrl</div>
-                        <div data-code="AltLeft"             style="width:3.6em">Alt</div>
-                        <div data-code="Space"        repeat style="width:19.3em"></div>
-                        <div data-code="AltRight"            style="width:3.6em">Alt</div>
-                        <div data-code="ControlRight"        style="width:3.6em">Ctrl</div>
-                        <div data-code="ArrowLeft"    repeat                    ><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg></div>
-                        <div data-code="ArrowRight"   repeat                    ><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg></div>
-                        <div data-code="ArrowDown"    repeat                    ><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/></svg></div>
+                        <div data-code="ControlLeft"                       style="width:3.6em">Ctrl</div>
+                        <div data-code="AltLeft"                           style="width:3.6em">Alt</div>
+                        <div data-code="Space"        data-key1=" " repeat style="width:19.3em"></div>
+                        <div data-code="AltRight"                          style="width:3.6em">Alt</div>
+                        <div data-code="ControlRight"                      style="width:3.6em">Ctrl</div>
+                        <div data-code="ArrowLeft"                  repeat                    ><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg></div>
+                        <div data-code="ArrowRight"                 repeat                    ><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg></div>
+                        <div data-code="ArrowDown"                  repeat                    ><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/></svg></div>
                     </div>
                 </div>
 
@@ -268,12 +290,20 @@ export default class OnscreenKeyboard extends HTMLElement{
                 this.focusedElement = null;
             }
 
-            if(downEvent.target.hasAttribute('focusable')){
-                this.focusedElement = downEvent.target;
+            // try to find a focusable parent
+            let target = downEvent.target;
+            while(target && !target.hasAttribute('focusable')){ target = target.parentNode; }
+            if(target){
+                this.focusedElement = target;
                 this.focusedElement.classList.add('focused');
                 this.focusedElement.dispatchEvent(new Event('focusin', {cancelable:true, bubbles:true}));
             }
         });
+
+        // reroute keyboard events to focused element
+        const maybeDuplicateEvent = event => !event.virtual && this.focusedElement?.dispatchEvent(duplicateKeyboardEvent(event));
+        window.addEventListener('keydown', maybeDuplicateEvent);
+        window.addEventListener('keyup',   maybeDuplicateEvent);
 
         // cursor movement
         let heldCount = 0;
@@ -442,9 +472,9 @@ export default class OnscreenKeyboard extends HTMLElement{
                     timestamp: performance.now(),
                     bubbles: true,
                     cancelable: true,
-                    shiftHeld: this.shiftHeld,
-                    ctrlHeld: this.ctrlHeld,
-                    altHeld: this.altHeld,
+                    shiftKey: this.shiftHeld,
+                    ctrlKey: this.ctrlHeld,
+                    altKey: this.altHeld,
                     metaKey: this.metaHeld,
                     code: keyElement.code,
                     key: keyElement.key,
@@ -458,20 +488,20 @@ export default class OnscreenKeyboard extends HTMLElement{
                 // add a timeout for key repeats
                 if(keyElement.repeat){
                     this.keyRepeatTimeout = setTimeout(function loop(){
-                        this.dispatchEvent(new KeyboardEvent('keydown', Object.assign({
+                        this.focusedElement.dispatchEvent(Object.assign(new KeyboardEvent('keydown', Object.assign({
                             timestamp: performance.now(),
                             repeat: true,
-                        }, downEventArgs)));
+                        }, downEventArgs)), {virtual:true}));
 
-                        this.keyRepeatTimeout = setTimeout(loop.bind(this), 75);
+                        this.keyRepeatTimeout = setTimeout(loop.bind(this), 50);
                     }.bind(this), 500);
                 }
 
                 // dispatch keydown
-                this.focusedElement.dispatchEvent(new KeyboardEvent('keydown', Object.assign({
+                this.focusedElement.dispatchEvent(Object.assign(new KeyboardEvent('keydown', Object.assign({
                     timestamp: performance.now(),
                     repeat: false,
-                }, downEventArgs)));
+                }, downEventArgs)), {virtual:true}));
             }
         }
     };
@@ -535,14 +565,14 @@ export default class OnscreenKeyboard extends HTMLElement{
             }
 
             if(this.focusedElement){
-                this.focusedElement.dispatchEvent(new KeyboardEvent('keyup', {
+                this.focusedElement.dispatchEvent(Object.assign(new KeyboardEvent('keyup', {
                     timestamp: performance.now(),
-                    shiftHeld: this.shiftHeld,
-                    ctrlHeld: this.ctrlHeld,
-                    altHeld: this.altHeld,
+                    shiftKey: this.shiftHeld,
+                    ctrlKey: this.ctrlHeld,
+                    altKey: this.altHeld,
                     metaKey: this.metaHeld,
                     key: keyElement.key,
-                }));
+                }), {virtual:true}));
             }
         }
     };
@@ -587,8 +617,8 @@ export default class OnscreenKeyboard extends HTMLElement{
                     curr = curr.parentNode;
                 }while(curr && (!element || !curr.contains(element)) && curr.classList);
 
-                this.lastHoveredElement.dispatchEvent(new PointerEvent('pointerleave'));
-                this.lastHoveredElement.dispatchEvent(new MouseEvent('mouseleave'));
+                this.lastHoveredElement.dispatchEvent(Object.assign(new PointerEvent('pointerleave'), {virtual:true}));
+                this.lastHoveredElement.dispatchEvent(Object.assign(new MouseEvent('mouseleave'), {virtual:true}));
             }
 
             if(element){
@@ -607,8 +637,8 @@ export default class OnscreenKeyboard extends HTMLElement{
 
                 this.cursor.setAttribute('type', cursorStyle || 'auto');
 
-                element.dispatchEvent(new PointerEvent('pointerleave'));
-                element.dispatchEvent(new MouseEvent('mouseleave'));
+                element.dispatchEvent(Object.assign(new PointerEvent('pointerleave'), {virtual:true}));
+                element.dispatchEvent(Object.assign(new MouseEvent('mouseleave'), {virtual:true}));
             }
         }
 
@@ -625,8 +655,8 @@ export default class OnscreenKeyboard extends HTMLElement{
                 screenY: window.screenTop + this.cursorPosition.y,
             };
             
-            element.dispatchEvent(new PointerEvent('pointermove', eventArgs));
-            element.dispatchEvent(new MouseEvent('mousemove', eventArgs));
+            element.dispatchEvent(Object.assign(new PointerEvent('pointermove', eventArgs), {virtual:true}));
+            element.dispatchEvent(Object.assign(new MouseEvent('mousemove', eventArgs), {virtual:true}));
         }
 
         this.lastHoveredElement = element;
@@ -668,8 +698,8 @@ export default class OnscreenKeyboard extends HTMLElement{
             view: window,
             detail: this.lastMouseDown.counter,
         };
-        elementAtPosition.dispatchEvent(new PointerEvent('pointerdown', downEventArgs));
-        elementAtPosition.dispatchEvent(new MouseEvent('mousedown', downEventArgs));
+        elementAtPosition.dispatchEvent(Object.assign(new PointerEvent('pointerdown', downEventArgs), {virtual:true}));
+        elementAtPosition.dispatchEvent(Object.assign(new MouseEvent('mousedown', downEventArgs), {virtual:true}));
 
         this.clickedButtonsMap[button] = elementAtPosition;
 
@@ -697,16 +727,16 @@ export default class OnscreenKeyboard extends HTMLElement{
             buttons: button,
             detail: this.lastMouseUp.counter,
         };
-        elementAtPosition.dispatchEvent(new PointerEvent('pointerup', upEventArgs));
-        elementAtPosition.dispatchEvent(new MouseEvent('mouseup', upEventArgs));
+        elementAtPosition.dispatchEvent(Object.assign(new PointerEvent('pointerup', upEventArgs), {virtual:true}));
+        elementAtPosition.dispatchEvent(Object.assign(new MouseEvent('mouseup', upEventArgs), {virtual:true}));
 
         // pointer down and up on the same element
         if(this.clickedButtonsMap[button] === elementAtPosition){
-            elementAtPosition.dispatchEvent(new MouseEvent('click', upEventArgs));
+            elementAtPosition.dispatchEvent(Object.assign(new MouseEvent('click', upEventArgs), {virtual:true}));
 
             // double click
             if(this.lastMouseUp.counter === 2){
-                elementAtPosition.dispatchEvent(new MouseEvent('dblclick', upEventArgs));
+                elementAtPosition.dispatchEvent(Object.assign(new MouseEvent('dblclick', upEventArgs), {virtual:true}));
             }
         }
 

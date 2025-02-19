@@ -2,11 +2,12 @@ import AddStyle from '../__common__/Style.js';
 
 AddStyle(/*css*/`
     .code-line{
-        gap: 10px;
-        font-family: 'Cascadia Mono', monospace;
-        font-size: .7rem;
+        font-family: var(--line-font-family);
+        font-size: var(--line-font-size);
         padding: 0 5px;
-        pointer-events: all;
+        user-select: none;
+        display: flex;
+        align-items: center;
     }
 
     .code-line.selected{
@@ -15,6 +16,7 @@ AddStyle(/*css*/`
 
     .code-line .line-number{
         color: var(--editorLineNumber-foreground);
+        width: var(--line-number-gutter-width);
     }
 
     .code-line.selected .line-number{
@@ -23,15 +25,18 @@ AddStyle(/*css*/`
     
     .code-line .line-content{
         border-right: 3px solid transparent;
+        height: 100%;
     }
     
     .code-line .text-content{
-        font-family: 'Cascadia Mono', monospace;
+        font-family: var(--line-font-family);
         margin: 0;
     }
 `);
 
 export default class CodeLine extends HTMLElement{
+    static charWidth = 0;
+
     constructor(textContent){
         super();
 
@@ -41,12 +46,14 @@ export default class CodeLine extends HTMLElement{
             <div class="line-number"></div>
             <div class="line-content relative">
                 <pre class="text-content">${textContent}</pre>
+                <div class="selection-area"></div>
             </div>
         `;
 
         this.lineNumberContainer = this.querySelector('.line-number');
         this.lineContentContainer = this.querySelector('.line-content');
         this.textContentContainer = this.querySelector('.text-content');
+        this.selectionArea = this.querySelector('.selection-area');
     };
 
     connectedCallback(){
@@ -57,24 +64,8 @@ export default class CodeLine extends HTMLElement{
 
     };
 
-    addCursor(cursor){
-        this.lineContentContainer.appendChild(cursor);
-    };
-
-    // removes cursors that have the same column as another cursor
-    consolidateCursors(){
-        const cursors = this.cursors;
-        for(let i=0; i<cursors.length; i++){
-            for(let j=cursors.length-1; j>i; j--){
-                if(cursors[j].column === cursors[i].column){
-                    cursors[j].remove();
-                }
-            }
-        }
-    };
-
-    getOffsetX(clientX){
-        return clientX - this.lineContentContainer.getBoundingClientRect().left;
+    insertSelectionHighlight(selectionHighlight){
+        this.lineContentContainer.appendChild(selectionHighlight);
     };
 
     get text(){
@@ -83,10 +74,6 @@ export default class CodeLine extends HTMLElement{
 
     set text(value){
         return this.textContentContainer.innerText = value;
-    };
-
-    get cursors(){
-        return Array.from(this.lineContentContainer.children).slice(1);
     };
 
     get length(){
