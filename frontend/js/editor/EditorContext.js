@@ -3,22 +3,15 @@ import Drive from '../__common__/Drive.js';
 
 import {insertCharacter, getWordBoundsAtPosition} from './Commands.js';
 import Keybinds from './Keybinds.js';
-import CodeLine from './CodeLine.js';
 import Position from './Position.js';
-import './QuickTable.js';
+import './CodeArea.js';
 
-import * as Shiki from 'shiki';
 import SelectionRange from './SelectionRange.js';
 
 AddStyle(/*css*/`
     .editor-context{
         position: relative;
-        pointer-events: all;
         cursor: text;
-    }
-
-    .editor-context .code-area{
-        pointer-events: all;
     }
 `);
 
@@ -35,10 +28,10 @@ export default class EditorContext extends HTMLElement{
         this.toggleAttribute('focusable', true);
 
         this.innerHTML = /*html*/`
-            <quick-table class="code-area"></quick-table>
+            <code-area></code-area>
         `;
 
-        this.table = this.querySelector('.code-area');
+        this.codeArea = this.querySelector('.code-area');
         this.filePath = filePath;
 
         this.keybinds = Keybinds;
@@ -50,7 +43,7 @@ export default class EditorContext extends HTMLElement{
         this.fontFamily = null;
         this.fontSize   = 0;
         this.fontWidth  = 0;
-        this.setFont("'Cascadia Mono', monospace", 14);
+        this.codeArea.setFont("'Cascadia Mono', monospace", 14);
 
         // when the code area is focused, toggle the cursor animation on
         this.addEventListener('focusin', () => {
@@ -62,7 +55,7 @@ export default class EditorContext extends HTMLElement{
 
         // cursor selection and dragging
         this.addEventListener('pointerdown', downEvent => {
-            const downPosition = this.getPositionAt(downEvent.offsetX, downEvent.offsetY);
+            const downPosition = this.codeArea.getPositionAt(downEvent.offsetX, downEvent.offsetY);
 
             const selectedLine = this.lines[downPosition.line];
             if(!selectedLine){ return; }
@@ -71,7 +64,7 @@ export default class EditorContext extends HTMLElement{
             const ranges = downEvent.ctrlKey ? [...this.ranges, newPosition] : [newPosition];
 
             const moveCallback = moveEvent => {
-                const movePosition = this.getPositionAt(moveEvent.offsetX, moveEvent.offsetY);
+                const movePosition = this.codeArea.getPositionAt(moveEvent.offsetX, moveEvent.offsetY);
                 newPosition.head = movePosition;
                 this.select(ranges);
             };
@@ -85,7 +78,7 @@ export default class EditorContext extends HTMLElement{
         });
 
         this.addEventListener('dblclick', downEvent => {
-            const downPosition = this.getPositionAt(downEvent.offsetX, downEvent.offsetY);
+            const downPosition = this.codeArea.getPositionAt(downEvent.offsetX, downEvent.offsetY);
             const wordBounds = getWordBoundsAtPosition(this, downPosition);
             if(!wordBounds){ return; }
 
@@ -129,14 +122,7 @@ export default class EditorContext extends HTMLElement{
     };
 
     async setText(text){
-        let lines = text.replace(/\r\n/g, '\n').split('\n');
-        if(!lines.length || lines[lines.length-1] !== '\n'){ lines.push('\n'); }
-
-        // const tabSpaces = ''.padStart(EditorContext.spacesPerTab, '');
-        // lines = lines.map(line => line.replace('\t', tabSpaces).replace(new RegExp(`\\s{${EditorContext.spacesPerTab}}`, 'g'), `<span class="tab">${tabSpaces}</span>`));
-        let lastLine = null;
-        this.table.setRows(lines.map(lineText => (lastLine = new CodeLine(lineText, lastLine))));
-        this.updateLineGutterWidth();
+        this.codeArea.setText(text);
 
         for(const range of this.ranges){ range.apply(this.lines); }
     };
@@ -148,74 +134,38 @@ export default class EditorContext extends HTMLElement{
 
     select(ranges){
         for(const range of this.ranges){ range.clear(); }
-        
+
+        // this.ranges = SelectionRange.mergeRanges(ranges);
         this.ranges = SelectionRange.mergeRanges(ranges);
         for(const range of this.ranges){ range.apply(this.lines); }
     };
 
     delete(ranges){
-        for(const range of SelectionRange.normalizeRanges(SelectionRange.mergeRanges(ranges)).sort((a, b) => Position.greaterThan(a.tail, b.tail) ? -1 : 1)){
-            const lineBounds = range.getPerLineRanges(this.lines);
+        this.codeArea.deleteText(ranges);
+        // for(const range of SelectionRange.normalizeRanges(SelectionRange.mergeRanges(ranges)).sort((a, b) => Position.greaterThan(a.tail, b.tail) ? -1 : 1)){
+        //     const lineBounds = range.getPerLineRanges(this.lines);
 
-            const removingRows = [];
-            for(const bound of lineBounds){
-                const line = this.lines[bound.line];
+        //     const removingLines = [];
+        //     for(const bound of lineBounds){
+        //         const line = this.lines[bound.line];
 
-                console.log(bound)
+        //         if(bound.start===0 && (bound.end===-1 || bound.end===line.length)){
+        //             removingLines.push(bound.line);
+        //         }else if(bound.end === -1){
+        //             line.setText(line.text.slice(0, bound.start));
+        //         }else{
+        //             line.setText(line.text.slice(0, bound.start) + line.text.slice(bound.end, line.length));
+        //         }
+        //     }
 
-                if(bound.start===0 && (bound.end===-1 || bound.end===line.length)){
-                    removingRows.push(line);
-                }else if(bound.end === -1){
-                    line.setText(line.text.slice(0, bound.start));
-                }else{
-                    line.setText(line.text.slice(0, bound.start) + line.text.slice(bound.end, line.length));
-                }
-
-                break;
-            }
-
-            this.table.removeRows(removingRows);
-        }
+        //     if(removingLines.length){
+        //         this.codeArea.remove(removingLines[0], removingLines[removingLines.length-1]+1);
+        //     }
+        // }
     };
 
     insert(insertions){
 
-    };
-
-    // updates how many pixels are needed to fit the line numbers
-    updateLineGutterWidth(){
-        this.lineNumberGutterWidth = Math.max(1, Math.ceil(Math.log10(this.lines.length)))*this.fontWidth + 6;
-        this.style.setProperty('--line-number-gutter-width', `${this.lineNumberGutterWidth}px`);
-    };
-
-    setFont(font, size){
-        this.style.setProperty('--line-font-family', font);
-        this.style.setProperty('--line-font-size', `${size}px`);
-        this.style.setProperty('--line-highlight-radius', `${size*.2}px`);
-        
-        // canvas used to measure text
-        const textRuler = document.createElement('canvas');
-        const context = textRuler.getContext('2d');
-        context.font = `${size}px ${font}`;
-        this.fontWidth = context.measureText('M').width;
-        this.style.setProperty('--line-font-width', `${this.fontWidth}px`);
-        
-        CodeLine.charWidth = this.fontWidth;
-        this.fontSize = size;
-        this.fontFamily = font;
-        
-        this.updateLineGutterWidth();
-        this.table.setRowHeight(size * 1.2);
-        this.select(this.ranges);
-    };
-
-    // returns the line and column number of a given x/y position relative to the code window
-    getPositionAt(x, y){
-        return new Position(Math.floor((y + this.table._renderedState.scrollPosition) / this.table._rowHeight), Math.floor((x - this.lineNumberGutterWidth) / this.fontWidth));
-    };
-
-    getLine(index){
-        return this._rows[index] || null;
     };
 
     exec(command){
@@ -230,7 +180,7 @@ export default class EditorContext extends HTMLElement{
     };
 
     get lines(){
-        return this.table._rows;
+        return this.codeArea._lines;
     };
 };
 customElements.define('editor-context', EditorContext);

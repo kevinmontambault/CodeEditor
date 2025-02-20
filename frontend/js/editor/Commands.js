@@ -166,8 +166,8 @@ export const deleteSelectionBackward = editor => {
 
 export const insertCharacter = character => editor => {
     // return editor.exec({
-    //     insert: editor.ranges.map(range => ({line:range.head.line, col:range.head.col, string:character})),
     //     delete: 0,
+    //     insert: editor.ranges.map(range => ({line:range.head.line, col:range.head.col, string:character})),
     //     ranges: editor.ranges.map(range => {
     //         new SelectionRange({line:range.head.line-1, });
     //     })

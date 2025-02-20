@@ -1,5 +1,6 @@
 import AddStyle from '../__common__/Style.js';
 import {createHighlighter} from 'shiki'
+import QuickTable from './CodeArea.js';
 
 AddStyle(/*css*/`
     .code-line{
@@ -73,8 +74,51 @@ function hastToHTML(hast){
     })(hast.children[0].children[0].children[0].children);
 };
 
+// export class CodeArea extends QuickTable{
+//     constructor(){
+//         super();
+
+//         this.renderLine = null;
+//         this.renderQueue = null;
+
+//         this.addEventListener('reload', ({state}) => {
+
+
+//             console.log(state.rowEnd);
+//         });
+//     };
+
+//     insert(text, index=-1){
+//         if(index < 0){ index = this._lines.length + index + 1; }
+//         this.insertRow(new CodeLine(text, this.getRow(index-1)));
+//     };
+
+//     remove(startIndex, endIndex){
+//         if(endIndex < 1){ endIndex = this._lines.length + index + 1; }
+
+//         for(const row of this._lines.slice(startIndex, endIndex)){ delete row.parentArea; }
+//         this._lines.splice(startIndex, endIndex-startIndex);
+
+//         const prevRow = this._lines[startIndex-1] || null;
+//         const nextRow = this._lines[endIndex]   || null;
+        
+//         if(prevRow){ prevRow.nextLine = nextRow; }
+//         if(nextRow){
+//             nextRow.prevLine = prevRow;
+//             nextRow.invalidateState();
+//         }
+
+//         this._indexesValid = false;
+//         this.reload();
+//     };
+
+//     move(indexFrom, indexTo){
+
+//     };
+// };
+// customElements.define('code-area', CodeArea);
+
 export default class CodeLine extends HTMLElement{
-    static charWidth = 0;
     static tabWidth = 3;
 
     constructor(codeText, prevoiusLine=null){
@@ -106,6 +150,9 @@ export default class CodeLine extends HTMLElement{
         this.connected    = false;
         this.rendered     = false;
         this.grammarState = null;
+
+        this.positionValid = true;
+        this.position = prevoiusLine ? prevoiusLine.getDocPosition()+prevoiusLine.length : 0;
 
         this.setText(codeText);
     };
@@ -151,9 +198,10 @@ export default class CodeLine extends HTMLElement{
     invalidateState(){
         if(!this.rendered){ return; }
 
-        this.rendered     = false;
-        this.grammarState = null;
-        this.hast         = null;
+        this.rendered      = false;
+        this.positionValid = false;
+        this.grammarState  = null;
+        this.hast          = null;
 
         this.nextLine?.invalidateState();
     };
@@ -166,7 +214,7 @@ export default class CodeLine extends HTMLElement{
         const hast = shiki.codeToHast(this.text, options);
 
         this.textContentContainer.innerHTML = hastToHTML(hast);
-        this.lineNumberContainer.innerText = this.parentTable.getRowIndex(this);
+        this.lineNumberContainer.innerText = this.parentArea.getLineIndex(this);
 
         this.rendered = true;
         this.nextLine?.render();
@@ -179,8 +227,20 @@ export default class CodeLine extends HTMLElement{
         return this.grammarState = shiki.getLastGrammarState(this.text, options);
     };
 
+    getDocPosition(){
+        if(this.positionValid){ return this.position; }
+
+        this.position = prevoiusLine ? prevoiusLine.getDocPosition()+prevoiusLine.length : 0;
+        this.positionValid = true;
+        return this.position;
+    };
+
     get length(){
         return this.text.length;
+    };
+
+    get charWidth(){
+        return this.parentArea.fontWidth;
     };
 };
 customElements.define('code-line', CodeLine);
