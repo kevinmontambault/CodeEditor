@@ -1,4 +1,5 @@
 {
-    "port": 52066,
-    "root": "E:/Desktop"
+    "root": "E:/Desktop",
+    "host": "http://73.60.176.141:52066",
+    "port": 52066
 }

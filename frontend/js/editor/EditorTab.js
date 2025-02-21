@@ -43,9 +43,15 @@ AddStyle(/*css*/`
     }
 `);
 
+let activeCounter = 0;
 export default class EditorTab extends HTMLElement{
     static activeTab = null;
     static tabs = [];
+
+    static getLastOpenedTab(){
+        if(!EditorTab.tabs.length){ return null; }
+        return EditorTab.tabs.reduce((a, b) => a.activeIndex>b.activeIndex ? a : b);
+    };
 
     static getTabByPath(path){
         return EditorTab.tabs.find(tab => tab.path === path) || null;
@@ -62,7 +68,11 @@ export default class EditorTab extends HTMLElement{
         `;
 
         this.addEventListener('click', () => this.active = true);
-        this.querySelector('.close-button').addEventListener('click', () => this.close());
+        this.querySelector('.close-button').addEventListener('click', clickEvent => {
+            this.close();
+            clickEvent.preventDefault();
+            clickEvent.stopImmediatePropagation();
+        });
 
         this.path = path;
         this.name = name;
@@ -86,6 +96,9 @@ export default class EditorTab extends HTMLElement{
         this.remove();
         this.context.remove();
 
+        const lastOpened = EditorTab.getLastOpenedTab();
+        if(lastOpened){ lastOpened.active = true; }
+        
         return true;
     };
 
@@ -95,11 +108,12 @@ export default class EditorTab extends HTMLElement{
             if(EditorTab.activeTab){ EditorTab.activeTab.active = false; }
             
             EditorTab.activeTab = this;
+            this.activeIndex = activeCounter++;
+
             this.classList.add('active');
             this.context.classList.remove('hidden');
             return true;
         }else{
-            console.log('hide old tab', this.context)
             EditorTab.activeTab = null;
             this.classList.remove('active');
             this.context.classList.add('hidden');
