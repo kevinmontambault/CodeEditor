@@ -121,8 +121,9 @@ app.post('/', async (req, res) => {
     aesKey  = keyContent.subarray(0, 32);
     hmacKey = keyContent.subarray(32, 64);
 
-    const hostUrl = `http://192.168.0.11:8000/CodeEditor/?h=${encodeURIComponent(`http://${config.ip}:${config.port}`)}&e=${aesKey.toString('base64url')}&m=${hmacKey.toString('base64url')}`;
-    // const hostUrl = `https://KevinMontambault.github.io/CodeEditor/?h=${config.host}&e=${aesKey.toString('base64')}&m=${hmacKey.toString('base64')}`;
+    const baseUrl = 'https://kevinmontambault.github.io';
+    // const baseUrl = 'http://192.168.0.11:8000';
+    const hostUrl = `${baseUrl}/CodeEditor/?h=${encodeURIComponent(`http://${config.ip}:${config.port}`)}&e=${aesKey.toString('base64url')}&m=${hmacKey.toString('base64url')}`;
     console.log(hostUrl);
     qrcode.generate(hostUrl, {small:true}, console.log);
 
