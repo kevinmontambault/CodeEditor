@@ -15,6 +15,36 @@ function encryptResponse(response){
     return response;
 };
 
+function validatePath(filePath){
+    const rootPath = path.normalize(config.root);
+    const fullPath = path.normalize(path.join(rootPath, decodeURIComponent(filePath)));
+    if(fullPath.startsWith(rootPath)){ return fullPath; }
+    return false;
+};
+
+async function sendFile(filePath){
+    const fullPath = validatePath(filePath);
+    if(!fullPath){ throw new Error('Invalid Path'); }
+    return await fs.readFile(fullPath, 'utf-8');
+};
+
+async function sendFolder(folderPath){
+    const fullPath = validatePath(folderPath);
+    if(!fullPath){ throw new Error('Invalid Path'); }
+
+    const dirents = await fs.readdir(fullPath, {withFileTypes:true});
+    const direntNames = dirents.map(dirent => `${dirent.isFile() ? 'F' : 'D'}${dirent.name}`);
+
+    return direntNames.sort().join('\n');
+};
+
+async function updateFile(filePath, deltas){
+    const fullPath = validatePath(filePath);
+    if(!fullPath){ throw new Error('Invalid Path'); }
+
+    return '';
+};
+
 app.use('/', (req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'X-IV,X-HMAC');
@@ -58,67 +88,23 @@ app.post('/', async (req, res) => {
     // handle message
     switch(decryptedMessage.charAt(0)){
         case 'F': {
-            try{ return res.status(200).send(encryptResponse()); }
-            catch(err){ return res.status(500).end(); }
+            try{ return res.status(200).send(encryptResponse(await sendFile(decryptedMessage.slice(1)))); }
+            catch(err){ console.log(err); return res.status(500).end(); }
         }
 
         case 'D': {
-            try{ return res.status(200).send(encryptResponse()); }
-            catch(err){ return res.status(500).end(); }
+            try{ return res.status(200).send(encryptResponse(await sendFolder(decryptedMessage.slice(1)))); }
+            catch(err){ console.log(err); return res.status(500).end(); }
         }
 
         case 'U': {
             try{ return res.status(200).send(encryptResponse()); }
-            catch(err){ return res.status(500).end(); }
+            catch(err){ console.log(err); return res.status(500).end(); }
         }
 
         default: {
             return res.status(400).end();
         }
-    }
-});
-
-// get a mounted directory
-app.get('/drive*', async (req, res) => {
-    const rootPath = path.normalize(config.root);
-    const fullPath = path.normalize(path.join(rootPath, decodeURIComponent(req.url.slice(6))));
-    
-    if(!fullPath.startsWith(rootPath)){ return res.status(403).end(); }
-
-    // check if the file is a directory
-    let fileStat;
-    try{ fileStat = await fs.stat(fullPath); }
-    catch(err){
-        console.error('Failed to fetch file stats', err);
-        return res.status(500).end();
-    }
-
-    // its a directory, so send all sub-directories
-    if(fileStat.isDirectory()){
-        let dirents;
-        try{ dirents = await fs.readdir(fullPath, {withFileTypes:true}) }
-        catch(err){
-            console.error('Failed to fetch directory contents', err);
-            return res.status(500).end();
-        }
-
-        const direntNames = dirents.map(dirent => `${dirent.isFile() ? 'F' : 'D'}${dirent.name}`);
-
-        res.write(direntNames.sort().join('\n'));
-        return res.end();
-    }
-    
-    // it's a file, so try to send the whole thing
-    else{
-        let fileContent;
-        try{ fileContent = await fs.readFile(fullPath, 'utf-8'); }
-        catch(err){
-            console.error('Failed to read file contents', err);
-            return res.status(500).end();
-        }
-
-        res.write(fileContent);
-        return res.end();
     }
 });
 
@@ -135,8 +121,10 @@ app.get('/drive*', async (req, res) => {
     aesKey  = keyContent.subarray(0, 32);
     hmacKey = keyContent.subarray(32, 64);
 
-    const hostUrl = `https://KevinMontambault.github.io/CodeEditor?h=${config.host}&e=${aesKey.toString('base64')}&h=${hmacKey.toString('base64')}`;
+    const hostUrl = `http://192.168.0.11:52066/CodeEditor/?h=${encodeURIComponent(config.host)}&e=${aesKey.toString('base64url')}&m=${hmacKey.toString('base64url')}`;
+    // const hostUrl = `https://KevinMontambault.github.io/CodeEditor/?h=${config.host}&e=${aesKey.toString('base64')}&m=${hmacKey.toString('base64')}`;
     qrcode.generate(hostUrl, {small:true}, console.log);
+    console.log(hostUrl, '\n\n');
 
     const port = 4001;
     const server = app.listen(port, () => console.log(`App running ${port}`));
