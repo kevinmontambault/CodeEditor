@@ -1,6 +1,5 @@
 import AddStyle from '../__common__/Style.js';
 import {createHighlighter} from 'shiki'
-import QuickTable from './CodeArea.js';
 
 AddStyle(/*css*/`
     .code-line{
@@ -61,7 +60,8 @@ AddStyle(/*css*/`
     }
 `);
 
-const shiki = await createHighlighter({langs:['js'], themes:['monokai']});
+let shiki;
+createHighlighter({langs:['js'], themes:['monokai']}).then(s => shiki = s);
 const shikiOptions = {lang:'js', theme:'monokai'};
 
 function hastToHTML(hast){
