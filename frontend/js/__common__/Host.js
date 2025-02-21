@@ -19,6 +19,7 @@ export default new class Host{
             const url  = decodeURIComponent(params.get('h'));
             const aes  = params.get('e').replace(/-/g, '+').replace(/_/g, '/');
             const hmac = params.get('m').replace(/-/g, '+').replace(/_/g, '/');
+            window.history.replaceState({}, '', window.location.pathname);
 
             const existingHost = this.hosts.find(host => host.url === url);
             if(existingHost){
@@ -28,7 +29,7 @@ export default new class Host{
             }else{
                 let newHostName = 'New Host';
                 let i = 0;
-                while(this.hosts.find(host => host.name === newHostName)){ newHostName = `New Host ${+i}`; }
+                while(this.hosts.find(host => host.name === newHostName)){ newHostName = `New Host (${++i})`; }
 
                 this.hosts.push({name:newHostName, url, aes, hmac});
                 localStorage.setItem('hosts', JSON.stringify(this.hosts));
@@ -54,18 +55,22 @@ export default new class Host{
         this.url  = this.hosts[index].url;
     };
 
-    removeHost(index){
-        this.hosts.splice(index, 1);
-        if(index === this.hostIndex){
+    removeHost(host){
+        const hostIndex = this.hosts.findIndex(existingHost => existingHost.url === host.url);
+        if(hostIndex === -1){ return false; }
+
+        this.hosts.splice(hostIndex, 1);
+        if(hostIndex === this.hostIndex){
             this.hostIndex = -1;
             this.hmac = null;
             this.aes  = null;
             this.url  = null;
-        }else if(index < this.hostIndex){
+        }else if(hostIndex < this.hostIndex){
             this.hostIndex -= 1;
         }
 
         localStorage.setItem('hosts', JSON.stringify(this.hosts));
+        return true;
     };
 
     async sendRequest(messageText){

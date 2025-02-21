@@ -52,6 +52,7 @@ class HostEntry extends HTMLElement{
         this.host = host;
 
         this.querySelector('.delete-button').addEventListener('click', event => {
+            if(Host.removeHost(this.host)){ this.remove(); }
             event.stopImmediatePropagation();
             event.preventDefault();
         });
