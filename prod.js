@@ -1,25 +1,85 @@
-const fs = require('fs').promises;
-const path = require('path');
+const fs      = require('fs').promises;
 const express = require('express');
+const crypto  = require('crypto');
+const path    = require('path');
+const qrcode  = require('qrcode-terminal');
 
 const config = require(path.join(__dirname, 'config.json'));
 
 const app = express();
-app.use(express.json());
 
-/*
+const hostUrl = `https://KevinMontambault.github.io/CodeEditor?h=${config.host}&e=${config.aes}&h=${config.hmac}`;
+qrcode.generate(hostUrl, {small:true}, console.log);
 
-test comment
+const aesKey  = Buffer.from(config.aes, 'base64');
+const hmacKey = Buffer.from(config.hmac, 'base64');
 
-*/
+function encryptResponse(response){
+    return response;
+};
 
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'frontend/index.html')));
-app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'frontend/static/manifest.json')));
-app.use('/img', express.static(path.join(__dirname, 'frontend/static/img')));
-app.use('/themes', express.static(path.join(__dirname, 'frontend/static/themes')));
-app.use('/icons', express.static(path.join(__dirname, 'frontend/static/icons')));
+app.use('/', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'X-IV,X-HMAC');
+    next();
+});
 
-app.use('/js', express.static(path.join(__dirname, 'frontend/js')));
+app.post('/', async (req, res) => {
+    if(!req.headers['x-iv']){ return res.status(400).end(); }
+    if(!req.headers['x-hmac']){ return res.status(400).end(); }
+
+    // get request params
+    const receivedIV   = Buffer.from(req.headers['x-iv'], 'base64');
+    const receivedHMAC = Buffer.from(req.headers['x-hmac'], 'base64');
+
+    // get body
+    const receivedBytes = await new Promise(resolve => {
+        const data = [];
+        req.on('data', chunk => data.push(chunk));
+        req.on('end', () => resolve(Buffer.concat(data)));
+    });
+    if(!receivedBytes.length){ return res.status(400).end(); }
+
+    // validate HMAC
+    try{
+        const calculatedHMAC = crypto.createHmac('sha256', hmacKey).update(Buffer.concat([receivedIV, receivedBytes])).digest();
+        if(calculatedHMAC.length !== receivedHMAC.length){ return res.status(400).end(); }
+        if(!crypto.timingSafeEqual(receivedHMAC, calculatedHMAC)){ return res.status(400).end(); }
+    }catch(err){
+        return res.status(400).end();
+    }
+
+    // decrypt message
+    let decryptedMessage;
+    try{
+        const decipher = crypto.createDecipheriv('aes-256-cbc', aesKey, receivedIV);
+        decryptedMessage = Buffer.concat([decipher.update(receivedBytes), decipher.final()]).toString();
+    }catch(err){
+        return res.status(400).end();
+    }
+
+    // handle message
+    switch(decryptedMessage.charAt(0)){
+        case 'F': {
+            try{ return res.status(200).send(encryptResponse()); }
+            catch(err){ return res.status(500).end(); }
+        }
+
+        case 'D': {
+            try{ return res.status(200).send(encryptResponse()); }
+            catch(err){ return res.status(500).end(); }
+        }
+
+        case 'U': {
+            try{ return res.status(200).send(encryptResponse()); }
+            catch(err){ return res.status(500).end(); }
+        }
+
+        default: {
+            return res.status(400).end();
+        }
+    }
+});
 
 // get a mounted directory
 app.get('/drive*', async (req, res) => {
@@ -65,4 +125,5 @@ app.get('/drive*', async (req, res) => {
     }
 });
 
-const server = app.listen(4000, () => console.log('App running'));
+const port = 4001;
+const server = app.listen(port, () => console.log(`App running ${port}`));

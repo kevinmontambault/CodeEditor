@@ -1,5 +1,5 @@
 import AddStyle from '../__common__/Style.js';
-import Drive from '../__common__/Drive.js';
+import Host from '../__common__/Host.js';
 
 import {insertCharacter, getWordBoundsAtPosition} from './Commands.js';
 import Keybinds from './Keybinds.js';
@@ -107,7 +107,7 @@ export default class EditorContext extends HTMLElement{
             this.setText(EditorContext.contentCache.get(this.filePath));
         }else{
             this.classList.add('loading');
-            const response = await Drive.readFile(this.filePath);
+            const response = await Host.readFile(this.filePath);
             this.classList.remove('loading');
 
             if(response.success){
