@@ -1,7 +1,5 @@
 {
     "root": "E:/Desktop",
     "host": "73.60.176.141:52066",
-    "port": 52066,
-    "hmac": "7yBTnS1IguZEmfoJeP+daa1yHmYcj/qvuZp68DAfUvM=",
-    "aes": "zY8UNviN4nBspMKqrgGMceqZlJCsUXA0fqs21Zylka8="
+    "port": 52066
 }

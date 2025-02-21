@@ -8,11 +8,8 @@ const config = require(path.join(__dirname, 'config.json'));
 
 const app = express();
 
-const hostUrl = `https://KevinMontambault.github.io/CodeEditor?h=${config.host}&e=${config.aes}&h=${config.hmac}`;
-qrcode.generate(hostUrl, {small:true}, console.log);
-
-const aesKey  = Buffer.from(config.aes, 'base64');
-const hmacKey = Buffer.from(config.hmac, 'base64');
+let aesKey  = null;
+let hmacKey = null;
 
 function encryptResponse(response){
     return response;
@@ -125,5 +122,23 @@ app.get('/drive*', async (req, res) => {
     }
 });
 
-const port = 4001;
-const server = app.listen(port, () => console.log(`App running ${port}`));
+(async () => {
+    const keysPath = path.join(__dirname, 'keys');
+    let keyContent;
+    try{ keyContent = await fs.readFile(keysPath); }
+    catch(err){
+        if(err.code !== 'ENOENT'){ throw err; }
+        keyContent = crypto.randomBytes(64);
+        await fs.writeFile(keysPath, keyContent);
+    }
+
+    aesKey  = keyContent.subarray(0, 32);
+    hmacKey = keyContent.subarray(32, 64);
+
+    const hostUrl = `https://KevinMontambault.github.io/CodeEditor?h=${config.host}&e=${aesKey.toString('base64')}&h=${hmacKey.toString('base64')}`;
+    qrcode.generate(hostUrl, {small:true}, console.log);
+
+    const port = 4001;
+    const server = app.listen(port, () => console.log(`App running ${port}`));
+})();
+
