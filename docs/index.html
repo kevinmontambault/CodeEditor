@@ -18,24 +18,13 @@
 
     // add any hosts that might be in the query params
     const params = new URLSearchParams(window.location.search);
-    if(params.has('h') && params.has('e') && params.has('m')){
-        const url  = decodeURIComponent(params.get('h'));
-        const aes  = params.get('e').replace(/-/g, '+').replace(/_/g, '/');
-        const hmac = params.get('m').replace(/-/g, '+').replace(/_/g, '/');
-        window.history.replaceState({}, '', window.location.pathname);
+    if(params.has('name') && params.has('host')){
+        const name = params.has('name');
+        const host = params.has('host');
 
-        const existingHost = hosts.find(host => host.url === url);
-        if(existingHost){
-            existingHost.url  = url;
-            existingHost.aes  = aes;
-            existingHost.hmac = hmac;
-        }else{
-            let newHostName = 'New Host';
-            let i = 0;
-            while(hosts.find(host => host.name === newHostName)){ newHostName = `New Host (${++i})`; }
-
-            hosts.push({name:newHostName, url, aes, hmac});
-            localStorage.setItem('hosts', JSON.stringify(this.hosts));
+        if(!hosts.find(existingHost => existingHost.url === host)){
+            hosts.push({name, host});
+            localStorage.setItem('hosts', JSON.stringify(hosts));
         }
     }
 
