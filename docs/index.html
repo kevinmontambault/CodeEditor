@@ -8,9 +8,10 @@
     function createHostCard(host){
         const hostCard = document.createElement('div');
         hostCard.innerHTML = `<div>${host.name}</div>`;
+        hostCard.classList.add('host-card');
 
         hostCard.addEventListener('click', () => {
-            window.location.href = `${host.url}`;
+            window.location.href = `${host.url}/editor`;
         });
 
         return hostCard;
@@ -35,5 +36,14 @@
 <style>
     .hosts-container{
         display: grid;
+    }
+
+    .host-card{
+        cursor: pointer;
+        background-color: grey;
+    }
+
+    .host-card:hover{
+        background-color: red;
     }
 </style>
