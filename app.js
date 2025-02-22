@@ -1,100 +1,145 @@
-const os = require('os');
-const https = require('https');
-const fs = require('fs').promises;
-const path = require('path');
+const fs      = require('fs').promises;
 const express = require('express');
-const compression = require('compression');
-const QRCode = require('qrcode');
-const Auth = require('./src/Auth.js');
+const crypto  = require('crypto');
+const path    = require('path');
+const qrcode  = require('qrcode-terminal');
 
 const config = require(path.join(__dirname, 'config.json'));
+const baseUrl = `${config.host}:${config.port}`;
 
 const app = express();
-app.use(express.json());
-app.use(compression());
 
-// Middleware to verify the client certificate
-app.use((req, res, next) => {
-    const cert = req.socket.getPeerCertificate();
-    if(req.client.authorized && cert.subject){ return next(); }
+let aesKey  = null;
+let hmacKey = null;
 
-    res.status(401).send('Client certificate required');
-    res.end();
+function encryptResponse(response){
+    return response;
+};
+
+function validatePath(filePath){
+    const rootPath = path.normalize(config.root);
+    const fullPath = path.normalize(path.join(rootPath, decodeURIComponent(filePath)));
+    if(fullPath.startsWith(rootPath)){ return fullPath; }
+    return false;
+};
+
+async function sendFile(filePath){
+    const fullPath = validatePath(filePath);
+    if(!fullPath){ throw new Error('Invalid Path'); }
+    return await fs.readFile(fullPath, 'utf-8');
+};
+
+async function sendFolder(folderPath){
+    const fullPath = validatePath(folderPath);
+    if(!fullPath){ throw new Error('Invalid Path'); }
+
+    const dirents = await fs.readdir(fullPath, {withFileTypes:true});
+    const direntNames = dirents.map(dirent => `${dirent.isFile() ? 'F' : 'D'}${dirent.name}`);
+
+    return direntNames.sort().join('\n');
+};
+
+async function updateFile(filePath, deltas){
+    const fullPath = validatePath(filePath);
+    if(!fullPath){ throw new Error('Invalid Path'); }
+
+    return '';
+};
+
+app.use('/', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'X-IV,X-HMAC');
+    next();
 });
 
-app.use('/icons', express.static(path.join(__dirname, 'icons')));
-app.use('/img', express.static(path.join(__dirname, 'www/img')));
-app.use('/www', express.static(path.join(__dirname, 'www')));
+app.post('/', async (req, res) => {
+    if(!req.headers['x-iv']){ return res.status(400).end(); }
+    if(!req.headers['x-hmac']){ return res.status(400).end(); }
 
-app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'manifest.json')));
+    // get request params
+    const receivedIV   = Buffer.from(req.headers['x-iv'], 'base64');
+    const receivedHMAC = Buffer.from(req.headers['x-hmac'], 'base64');
 
-// main editor entry point
-app.get('/editor', (req, res) => res.sendFile(path.join(__dirname, 'www/editor.html')));
+    // get body
+    const receivedBytes = await new Promise(resolve => {
+        const data = [];
+        req.on('data', chunk => data.push(chunk));
+        req.on('end', () => resolve(Buffer.concat(data)));
+    });
+    if(!receivedBytes.length){ return res.status(400).end(); }
 
-// get a mounted directory
-app.get('/drive*', /*Auth.validate, */async (req, res) => {
-    const rootPath = path.normalize(config.root);
-    const fullPath = path.normalize(path.join(rootPath, decodeURIComponent(req.url.slice(6))));
-    
-    if(!fullPath.startsWith(rootPath)){ return res.status(403).end(); }
-
-    // check if the file is a directory
-    let fileStat;
-    try{ fileStat = await fs.stat(fullPath); }
-    catch(err){
-        console.error('Failed to fetch file stats', err);
-        return res.status(500).end();
+    // validate HMAC
+    try{
+        const calculatedHMAC = crypto.createHmac('sha256', hmacKey).update(Buffer.concat([receivedIV, receivedBytes])).digest();
+        if(calculatedHMAC.length !== receivedHMAC.length){ return res.status(400).end(); }
+        if(!crypto.timingSafeEqual(receivedHMAC, calculatedHMAC)){ return res.status(400).end(); }
+    }catch(err){
+        return res.status(400).end();
     }
 
-    // its a directory, so send all sub-directories
-    if(fileStat.isDirectory()){
-        let dirents;
-        try{ dirents = await fs.readdir(fullPath, {withFileTypes:true}) }
-        catch(err){
-            console.error('Failed to fetch directory contents', err);
-            return res.status(500).end();
+    // decrypt message
+    let decryptedMessage;
+    try{
+        const decipher = crypto.createDecipheriv('aes-256-cbc', aesKey, receivedIV);
+        decryptedMessage = Buffer.concat([decipher.update(receivedBytes), decipher.final()]).toString();
+    }catch(err){
+        return res.status(400).end();
+    }
+
+    // handle message
+    switch(decryptedMessage.charAt(0)){
+        case 'F': {
+            try{ return res.status(200).send(encryptResponse(await sendFile(decryptedMessage.slice(1)))); }
+            catch(err){ console.log(err); return res.status(500).end(); }
         }
 
-        const direntNames = dirents.map(dirent => `${dirent.isFile() ? 'F' : 'D'}${dirent.name}`);
-
-        res.write(direntNames.sort().join('\n'));
-        return res.end();
-    }
-    
-    // it's a file, so try to send the whole thing
-    else{
-        let fileContent;
-        try{ fileContent = await fs.readFile(fullPath, 'utf-8'); }
-        catch(err){
-            console.error('Failed to read file contents', err);
-            return res.status(500).end();
+        case 'D': {
+            try{ return res.status(200).send(encryptResponse(await sendFolder(decryptedMessage.slice(1)))); }
+            catch(err){ console.log(err); return res.status(500).end(); }
         }
 
-        res.write(fileContent);
-        return res.end();
+        case 'U': {
+            try{ return res.status(200).send(encryptResponse()); }
+            catch(err){ console.log(err); return res.status(500).end(); }
+        }
+
+        default: {
+            return res.status(400).end();
+        }
     }
+});
+
+app.get('/r', async (req, res) => {
+    let registerFile;
+    try{ registerFile = await fs.readFile(path.join(__dirname, 'frontend/register.html'), 'utf-8'); }
+    catch(err){ console.log(err); return res.status(500).end(); }
+
+    res.send(registerFile.replace('{{NAME}}', config.name).replace('{{HOST}}', baseUrl).replace('{{HOST_MANAGER}}', config.hostManager||''));
+});
+
+app.use('/js', express.static(path.join(__dirname, 'frontend/js')));
+app.use('/static', express.static(path.join(__dirname, 'frontend/static')));
+app.get('/editor', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend/editor.html'));
 });
 
 (async () => {
-    const port = config.port || 4082;
-    const address = Object.values(os.networkInterfaces()).flat().find(i => !i.internal && i.family === 'IPv4')?.address || 'localhost';
+    const keysPath = path.join(__dirname, 'keys');
+    let keyContent;
+    try{ keyContent = await fs.readFile(keysPath); }
+    catch(err){
+        if(err.code !== 'ENOENT'){ throw err; }
+        keyContent = crypto.randomBytes(64);
+        await fs.writeFile(keysPath, keyContent);
+    }
 
-    const authUrl = `http://${address}:${port}/auth?key`;
-    const qrcode = await new Promise(resolve => QRCode.toString(authUrl, {type:'utf8', errorCorrectionLevel:'L'}, (err, str) => resolve(str)));
-    console.log(qrcode);
+    aesKey  = keyContent.subarray(0, 32);
+    hmacKey = keyContent.subarray(32, 64);
 
-    // load certificates
-    const options = {
-        key:  await fs.readFile('certs/server-key.pem'),
-        cert: await fs.readFile('certs/server-cert.pem'),
-        ca:   await fs.readFile('certs/ca-cert.pem'), // Trust our CA
-        requestCert: true, // request client certificate
-        rejectUnauthorized: true, // reject if client cert is not valid
-    };
+    const hostUrl = `${baseUrl}/r#${aesKey.toString('base64url')}#${hmacKey.toString('base64url')}`;
+    console.log(hostUrl);
+    qrcode.generate(hostUrl, {small:true}, console.log);
 
-    // start server
-    https.createServer(options, app).listen(port, address, () => {
-        console.log(`Editor Server running on https://${address}:${port}`);
-    });
+    const server = app.listen(config.port, () => console.log(`App running ${config.port}`));
 })();
 
