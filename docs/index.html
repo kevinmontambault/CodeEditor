@@ -19,8 +19,8 @@
     // add any hosts that might be in the query params
     const params = new URLSearchParams(window.location.search);
     if(params.has('name') && params.has('host')){
-        const name = params.getItem('name');
-        const host = params.getItem('host');
+        const name = params.get('name');
+        const host = params.get('host');
 
         if(!hosts.find(existingHost => existingHost.url === host)){
             hosts.push({name, url:host});
