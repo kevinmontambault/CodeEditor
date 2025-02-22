@@ -5,6 +5,7 @@ const path    = require('path');
 const qrcode  = require('qrcode-terminal');
 
 const config = require(path.join(__dirname, 'config.json'));
+const baseUrl = `${config.host}:${config.port}`;
 
 const app = express();
 
@@ -108,6 +109,18 @@ app.post('/', async (req, res) => {
     }
 });
 
+app.get('/r', async (req, res) => {
+    let registerFile;
+    try{ registerFile = await fs.readFile(path.join(__dirname, 'frontend/register.html'), 'utf-8'); }
+    catch(err){ console.log(err); return res.status(500).end(); }
+
+    res.send(registerFile.replace('{{NAME}}', config.name).replace('{{HOST}}', baseUrl).replace('{{HOST_MANAGER}}', config.hostManager||''));
+});
+
+app.get('/editor', (req, res) => {
+    res.send('');
+});
+
 (async () => {
     const keysPath = path.join(__dirname, 'keys');
     let keyContent;
@@ -121,9 +134,7 @@ app.post('/', async (req, res) => {
     aesKey  = keyContent.subarray(0, 32);
     hmacKey = keyContent.subarray(32, 64);
 
-    const baseUrl = 'https://kevinmontambault.github.io';
-    // const baseUrl = 'http://192.168.0.11:8000';
-    const hostUrl = `${baseUrl}/CodeEditor/?h=${encodeURIComponent(`http://${config.ip}:${config.port}`)}&e=${aesKey.toString('base64url')}&m=${hmacKey.toString('base64url')}`;
+    const hostUrl = `${baseUrl}/r#${aesKey.toString('base64url')}#${hmacKey.toString('base64url')}`;
     console.log(hostUrl);
     qrcode.generate(hostUrl, {small:true}, console.log);
 

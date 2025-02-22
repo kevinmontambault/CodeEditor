@@ -1,37 +1,50 @@
-<head>
-    <link rel="icon" href="/CodeEditor/icons/icon-81x81.png">
-    <link rel="manifest" href="/CodeEditor/manifest.json">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-  <script type="module" crossorigin src="/CodeEditor/assets/index-CPM3gKQF.js"></script>
-</head>
-
-
-<body class="flex-row">
-    <main-window class="flex-fill"></main-window>
+<body>
+    <div class="hosts-container"></div>
 </body>
 
-<style>
-    body{
-        margin: 0;
-        padding: 0;
-        width: 100dvw;
-        height: 100dvh;
-    }
+<script>
+    const hosts = JSON.parse(localStorage.getItem('hosts') || '[]');
 
-    @media screen and (orientation: portrait){
-        body{
-            transform: rotate(90deg) translateY(-100%);
-            transform-origin: left top;
-            width: 100dvh;
-            height: 100dvw;
+    function createHostCard(host){
+        const hostCard = document.createElement('div');
+        hostCard.innerHTML = `<div>${host.name}</div>`;
+
+        hostCard.addEventListener('click', () => {
+            window.location.href = `${host.url}`;
+        });
+
+        return hostCard;
+    };
+
+    // add any hosts that might be in the query params
+    const params = new URLSearchParams(window.location.search);
+    if(params.has('h') && params.has('e') && params.has('m')){
+        const url  = decodeURIComponent(params.get('h'));
+        const aes  = params.get('e').replace(/-/g, '+').replace(/_/g, '/');
+        const hmac = params.get('m').replace(/-/g, '+').replace(/_/g, '/');
+        window.history.replaceState({}, '', window.location.pathname);
+
+        const existingHost = hosts.find(host => host.url === url);
+        if(existingHost){
+            existingHost.url  = url;
+            existingHost.aes  = aes;
+            existingHost.hmac = hmac;
+        }else{
+            let newHostName = 'New Host';
+            let i = 0;
+            while(hosts.find(host => host.name === newHostName)){ newHostName = `New Host (${++i})`; }
+
+            hosts.push({name:newHostName, url, aes, hmac});
+            localStorage.setItem('hosts', JSON.stringify(this.hosts));
         }
     }
 
-    *{
-        pointer-events: none;
-    }
+    const hostsContainer = document.querySelector('.hosts-container');
+    for(const host of hosts){ hostsContainer.appendChild(createHostCard(host)); }
+</script>
 
-    :root{
-        --editor-fontFamily: "Consolas, 'Courier New', monospace";
+<style>
+    .hosts-container{
+        display: grid;
     }
 </style>

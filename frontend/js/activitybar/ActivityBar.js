@@ -1,5 +1,6 @@
 import FileExplorer from './activities/FileExplorer.js';
 import HostList from './activities/HostList.js';
+import ExitSession from './activities/ExitSession.js';
 import AddStyle from '../__common__/Style.js';
 
 AddStyle(/*css*/`
@@ -80,7 +81,7 @@ export default class ActivityBar extends HTMLElement{
         
         const buttonsContainer = this.querySelector('.buttons-container');
         const contentContainer = this.querySelector('.content-container');
-        for(const component of [FileExplorer, HostList]){
+        for(const component of [FileExplorer, HostList, ExitSession]){
             const activityButton = new ActivityButton(component.name, component.icon);
 
             const activity = new component();
@@ -91,10 +92,14 @@ export default class ActivityBar extends HTMLElement{
             contentContainer.appendChild(activity);
 
             activityButton.addEventListener('click', () => {
-                if(activityButton.active){
-                    this.hideActivity();
+                if(component.command){
+                    component.command();
                 }else{
-                    this.showActivity(component.name);
+                    if(activityButton.active){
+                        this.hideActivity();
+                    }else{
+                        this.showActivity(component.name);
+                    }
                 }
             });
         }

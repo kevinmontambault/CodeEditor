@@ -1,5 +1,7 @@
 {
     "root": "E:/Desktop",
-    "ip": "73.60.176.141",
-    "port": 52000
+    "host": "http://10.0.0.225",
+    "port": 52000,
+    "name": "Kevins Laptop",
+    "hostManager": "https://kevinmontambault.github.io/CodeEditor/"
 }

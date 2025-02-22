@@ -1,0 +1,13 @@
+<script>
+    const params = window.location.hash.split('#').slice(1);
+    if(!params.length){
+        document.write('Invalid parameters');
+    }else{
+        localStorage.setItem('e', params[0].replace(/-/g, '+').replace(/_/g, '/'));
+        localStorage.setItem('m', params[0].replace(/-/g, '+').replace(/_/g, '/'));
+
+        const hostManagerUrl = '{{HOST_MANAGER}}';
+        if(hostManagerUrl){ window.location.href = `${hostManagerUrl}?name=${'{{NAME}}'}&host=${'{{HOST}}'}`; }
+        else{ window.location.href = '/editor'; }
+    }
+</script>
