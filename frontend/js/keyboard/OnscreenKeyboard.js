@@ -37,19 +37,19 @@ AddStyle(/*css*/`
         background-repeat: no-repeat;
         width: 19px;
         height: 13px;
-        background-image: url('/CodeEditor/img/aero_arrow_l.cur');
+        background-image: url('/static/img/aero_arrow_l.cur');
     }
 
     .onscreen-keybaord .cursor[type="auto"]{
-        background-image: url('/CodeEditor/img/aero_arrow_l.cur');
+        background-image: url('/static/img/aero_arrow_l.cur');
     }
     
     .onscreen-keyboard .cursor[type="pointer"]{
-        background-image: url('/CodeEditor/img/aero_link_l.cur');
+        background-image: url('/static/img/aero_link_l.cur');
     }
 
     .onscreen-keyboard .cursor[type="text"]{
-        background-image: url('/CodeEditor/img/ibeam.png');
+        background-image: url('/static/img/ibeam.png');
     }
 
     .onscreen-keyboard .center-container, .onscreen-keyboard .keyboard-container, .onscreen-keyboard .key-row{

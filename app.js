@@ -137,7 +137,6 @@ app.get('/editor', (req, res) => {
     hmacKey = keyContent.subarray(32, 64);
 
     const hostUrl = `${baseUrl}/r#${aesKey.toString('base64url')}#${hmacKey.toString('base64url')}`;
-    console.log(hostUrl);
     qrcode.generate(hostUrl, {small:true}, console.log);
 
     const server = app.listen(config.port, () => console.log(`App running ${config.port}`));

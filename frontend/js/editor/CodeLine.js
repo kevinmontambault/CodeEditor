@@ -1,5 +1,5 @@
 import AddStyle from '../__common__/Style.js';
-import {createHighlighter} from 'shiki'
+import {createHighlighter} from 'https://cdn.jsdelivr.net/npm/shiki@3.0.0/+esm'
 
 AddStyle(/*css*/`
     .code-line{
