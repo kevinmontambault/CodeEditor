@@ -75,33 +75,41 @@ export default class ActivityBar extends HTMLElement{
         this.classList.add('activity-bar', 'flex-row');
 
         this.innerHTML = /*html*/`
-            <div class="buttons-container flex-col"></div>
+            <div class="flex-col">
+                <div class="activity-button-container flex-col"></div>
+                <hr>
+                <div class="command-button-container flex-col"></div>
+            </div>
             <div class="content-container hidden flex-row"></div>
         `;
         
-        const buttonsContainer = this.querySelector('.buttons-container');
+        const activityButtonContainer = this.querySelector('.activity-button-container');
         const contentContainer = this.querySelector('.content-container');
-        for(const component of [FileExplorer, PickDirectory, ExitSession]){
+        for(const component of [FileExplorer]){
             const activityButton = new ActivityButton(component.name, component.icon);
 
             const activity = new component();
             activity.setAttribute('data-name', component.name);
             activity.classList.add('hidden');
 
-            buttonsContainer.appendChild(activityButton);
+            activityButtonContainer.appendChild(activityButton);
             contentContainer.appendChild(activity);
 
             activityButton.addEventListener('click', () => {
-                if(component.command){
-                    component.command();
+                if(activityButton.active){
+                    this.hideActivity();
                 }else{
-                    if(activityButton.active){
-                        this.hideActivity();
-                    }else{
-                        this.showActivity(component.name);
-                    }
+                    this.showActivity(component.name);
                 }
             });
+        }
+
+        // simple command buttons
+        const commandButtonContainer = this.querySelector('.command-button-container');
+        for(const component of [PickDirectory, ExitSession]){
+            const activityButton = new ActivityButton(component.name, component.icon);
+            commandButtonContainer.appendChild(activityButton);
+            activityButton.addEventListener('click', () => component.command());
         }
     };
 

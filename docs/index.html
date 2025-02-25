@@ -1,5 +1,7 @@
 <body>
-    <div class="hosts-container"></div>
+    <div class="hosts-container">
+        <div class="add-host-card host-card"> + Add Host</div>
+    </div>
 </body>
 
 <script>
@@ -7,7 +9,7 @@
 
     function createHostCard(host){
         const hostCard = document.createElement('div');
-        hostCard.innerHTML = `<div>${host.name}</div>`;
+        hostCard.innerHTML = `<div class="host-name">${host.name}</div><div class="host-url">(${host.url})</div>`;
         hostCard.classList.add('host-card');
 
         hostCard.addEventListener('click', () => {
@@ -29,21 +31,51 @@
         }
     }
 
+    const addHostCard = document.querySelector('.add-host-card');
+    addHostCard.addEventListener('click', () => {
+
+    });
+
     const hostsContainer = document.querySelector('.hosts-container');
-    for(const host of hosts){ hostsContainer.appendChild(createHostCard(host)); }
+    for(const host of hosts){ hostsContainer.insertBefore(createHostCard(host), addHostCard); }
 </script>
 
 <style>
+    body{
+        padding: 0;
+        margin: 0;
+    }
+
     .hosts-container{
         display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 5px;
+        padding: 5px;
     }
 
     .host-card{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
+        gap: 3px;
         background-color: grey;
+        aspect-ratio: 1;
+        border: 4px solid grey;
+        border-radius: 15px;
     }
 
     .host-card:hover{
         background-color: red;
+    }
+
+    .host-name{
+        font-size: 1.3rem;
+    }
+
+    .host-url{
+        font-size: .9rem;
+        opacity: .8;
     }
 </style>
