@@ -1,5 +1,6 @@
 import FileExplorer from './activities/FileExplorer.js';
 import ExitSession from './activities/ExitSession.js';
+import PickDirectory from './activities/PickDirectory.js';
 import AddStyle from '../__common__/Style.js';
 
 AddStyle(/*css*/`
@@ -80,7 +81,7 @@ export default class ActivityBar extends HTMLElement{
         
         const buttonsContainer = this.querySelector('.buttons-container');
         const contentContainer = this.querySelector('.content-container');
-        for(const component of [FileExplorer, ExitSession]){
+        for(const component of [FileExplorer, PickDirectory, ExitSession]){
             const activityButton = new ActivityButton(component.name, component.icon);
 
             const activity = new component();
