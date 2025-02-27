@@ -349,13 +349,11 @@ export const addCursorUp = editor => {
 };
 
 export const fontSizeUp = editor => {
-    editor.setFont(editor.fontFamily, editor.fontSize + 1);
-    return true;
+    return editor.changeFontSize(1);
 };
 
 export const fontSizeDown = editor => {
-    editor.setFont(editor.fontFamily, Math.max(1, editor.fontSize - 1));
-    return true;
+    return editor.changeFontSize(-1);
 };
 
 // const deleteSubwordForward = view => {

@@ -56,6 +56,7 @@ AddStyle(/*css*/`
     .activity-bar{
         background: var(--activityBar-background);
         font: var(--editor-fontFamily);
+        position: relative;
     }
 
     .activity-bar .content-container{
@@ -65,6 +66,12 @@ AddStyle(/*css*/`
 
     .activity-bar .content-container>*{
         flex: 1;
+    }
+
+    .activity-bar hr{
+        width: 60%;
+        border: none;
+        border-bottom: 1px solid var(--badge-background);
     }
 `);
 

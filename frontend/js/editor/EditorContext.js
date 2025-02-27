@@ -123,8 +123,11 @@ export default class EditorContext extends HTMLElement{
 
     async setText(text){
         this.codeArea.setText(text);
-
         for(const range of this.ranges){ range.apply(this.lines); }
+    };
+
+    changeFontSize(...args){
+        this.codeArea.changeFontSize(...args);
     };
 
     async setTheme(theme){

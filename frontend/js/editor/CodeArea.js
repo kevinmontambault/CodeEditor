@@ -248,7 +248,16 @@ export default class CodeArea extends HTMLElement{
         return this._lineHeight;
     };
 
+    changeFontSize(delta){
+        return this.setFont(null, Math.max(1, this._fontSize + delta));
+    };
+
     setFont(font, size){
+        if(!font){ font = this._fontFamily; }
+        if(!size){ size = this._fontSize; }
+
+        console.log(font, size)
+
         this.style.setProperty('--line-font-family', font);
         this.style.setProperty('--line-font-size', `${size}px`);
         this.style.setProperty('--line-highlight-radius', `${size*.2}px`);
@@ -267,6 +276,7 @@ export default class CodeArea extends HTMLElement{
         this.lineHeight = size * 1.2;
 
         // this.select(this.ranges);
+        return true;
     };
 
     setText(newText){
