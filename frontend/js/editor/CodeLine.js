@@ -1,5 +1,5 @@
 import AddStyle from '../__common__/Style.js';
-import {createHighlighter} from 'https://cdn.jsdelivr.net/npm/shiki@3.0.0/+esm'
+import {createHighlighter} from 'http://localhost:3000/npm/shiki@3.0.0/+esm'
 
 AddStyle(/*css*/`
     .code-line{
@@ -60,8 +60,7 @@ AddStyle(/*css*/`
     }
 `);
 
-let shiki;
-createHighlighter({langs:['js'], themes:['monokai']}).then(s => shiki = s);
+const shiki = await createHighlighter({langs:['js'], themes:['monokai']});
 const shikiOptions = {lang:'js', theme:'monokai'};
 
 function hastToHTML(hast){

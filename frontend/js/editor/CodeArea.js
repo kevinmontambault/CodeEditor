@@ -45,14 +45,14 @@ AddStyle(/*css*/`
     }
     
     .code-area .scroll-handle{
-        background-color: orange;
+        background-color: #8C6BC8;
         position: absolute;
         inset: 2px;
         border-radius: 10px;
     }
 
     .code-area .scroll-gutter.dragging .scroll-handle{
-        background-color: orange;
+        background-color: #8C6BC8;
     }
 `);
 
