@@ -350,7 +350,7 @@ export const addCursorUp = editor => {
 
 export const addCursorOnSelection = editor => {
     return editor.exec({
-        ranges: editor.ranges.map(range => {
+        ranges: editor.ranges.filter(range => !range.isEmpty()).map(range => {
             const lines = range.getPerLineRanges(editor.lines);
             if(range.isLeftFacing()){
                 return [new SelectionRange(new Position(lines[0].line, lines[0].start)), ...lines.slice(1).map(line => new SelectionRange(new Position(line.line, line.end)))];
@@ -361,12 +361,33 @@ export const addCursorOnSelection = editor => {
     });
 };
 
+export const removeExtraCursors = editor => {
+    const ranges = editor.ranges;
+    if(ranges.length <= 1 && ranges[0].isEmpty()){ return false; }
+
+    return editor.exec({
+        ranges: [new SelectionRange(editor.ranges[0].head)]
+    });
+};
+
 export const fontSizeUp = editor => {
     return editor.changeFontSize(1);
 };
 
 export const fontSizeDown = editor => {
     return editor.changeFontSize(-1);
+};
+
+export const copy = editor => {
+
+};
+
+export const cut = editor => {
+
+};
+
+export const paste = editor => {
+
 };
 
 // const deleteSubwordForward = view => {

@@ -142,6 +142,10 @@ export default class SelectionRange{
         return Position.greaterThan(this.head, this.tail);
     };
 
+    isEmpty(){
+        return Position.equals(this.head, this.tail);
+    };
+
     min(){
         return this.isRightFacing() ? this.tail : this.head;
     };

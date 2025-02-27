@@ -28,12 +28,14 @@ import {
     addCursorUp,
     addCursorDown,
     addCursorOnSelection,
+    removeExtraCursors,
     fontSizeUp,
     fontSizeDown
 } from './Commands.js';
 
 // standard key presses
 export default {
+    'Escape': removeExtraCursors,
     'Ctrl+KeyA': selectAll,
 
     // 'Ctrl+KeyZ': undo,
