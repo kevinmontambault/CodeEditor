@@ -120,7 +120,7 @@ function hastToHTML(hast){
 export default class CodeLine extends HTMLElement{
     static tabWidth = 3;
 
-    constructor(codeText, prevoiusLine=null){
+    constructor(codeText, previousLine=null){
         super();
 
         this.classList.add('code-line', 'flex-row');
@@ -140,9 +140,9 @@ export default class CodeLine extends HTMLElement{
         this.selectionArea = this.querySelector('.selection-area');
         this.whitespaceLayer = this.querySelector('.whitespace-layer');
 
-        this.prevLine = prevoiusLine;
+        this.prevLine = previousLine;
         this.nextLine = null;
-        if(prevoiusLine){ prevoiusLine.nextLine = this; }
+        if(previousLine){ previousLine.nextLine = this; }
 
         this.text = '';
 
@@ -151,7 +151,7 @@ export default class CodeLine extends HTMLElement{
         this.grammarState = null;
 
         this.positionValid = true;
-        this.position = prevoiusLine ? prevoiusLine.getDocPosition()+prevoiusLine.length : 0;
+        this.position = previousLine ? previousLine.getDocPosition()+previousLine.length : 0;
 
         this.setText(codeText);
     };
@@ -229,7 +229,7 @@ export default class CodeLine extends HTMLElement{
     getDocPosition(){
         if(this.positionValid){ return this.position; }
 
-        this.position = prevoiusLine ? prevoiusLine.getDocPosition()+prevoiusLine.length : 0;
+        this.position = previousLine ? previousLine.getDocPosition()+previousLine.length : 0;
         this.positionValid = true;
         return this.position;
     };

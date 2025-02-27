@@ -29,6 +29,8 @@
             hosts.push({name, url:host});
             localStorage.setItem('hosts', JSON.stringify(hosts));
         }
+
+        window.location.href = `${host}/editor`;
     }
 
     const addHostCard = document.querySelector('.add-host-card');

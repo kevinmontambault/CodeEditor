@@ -1,4 +1,4 @@
-import CryptoJS from 'crypto-js';
+import forge from 'https://cdn.jsdelivr.net/npm/node-forge@1.3.1/+esm';
 
 function base64ToUint8Array(string){
     const binaryString = window.atob(string);
