@@ -117,11 +117,45 @@ app.get('/r', async (req, res) => {
     res.send(registerFile.replace('{{NAME}}', config.name).replace('{{HOST}}', baseUrl).replace('{{HOST_MANAGER}}', config.hostManager||''));
 });
 
+app.get('/hosts', (req, res) => {
+    res.sendFile(path.join(__dirname, '/docs/index.html'));
+});
+
 app.use('/js', express.static(path.join(__dirname, 'frontend/js')));
 app.use('/static', express.static(path.join(__dirname, 'frontend/static')));
 app.get('/editor', (req, res) => {
     res.sendFile(path.join(__dirname, 'frontend/editor.html'));
 });
+
+// Create Vite dev server in middleware mode
+(async () => {
+    const vite = await require('vite').createServer({
+        server: {middlewareMode:true},
+        resolve:{
+            alias: {
+                'crypto-js': path.join(__dirname, '/node_modules/crypto-js/index.js')
+            }
+        },
+        optimizeDeps: {
+            include: ['crypto-js']
+        },
+        root: path.resolve(__dirname, 'frontend') // Set Vite root
+    });
+
+    // Use Vite's middleware for HMR and asset handling
+    app.use(vite.middlewares);
+
+    // Serve the HTML file at /editor
+    app.get('/editor', async (req, res) => {
+        try{
+            let html = await vite.transformIndexHtml('/editor.html', await vite.ssrLoadModule('/editor.html'));
+            res.status(200).set({ 'Content-Type': 'text/html' }).send(html);
+        }catch(err){
+            vite.ssrFixStacktrace(err);
+            res.status(500).send(err.message);
+        }
+    });
+})();
 
 (async () => {
     const keysPath = path.join(__dirname, 'keys');
@@ -137,6 +171,7 @@ app.get('/editor', (req, res) => {
     hmacKey = keyContent.subarray(32, 64);
 
     const hostUrl = `${baseUrl}/r#${aesKey.toString('base64url')}#${hmacKey.toString('base64url')}`;
+    console.log(hostUrl);
     qrcode.generate(hostUrl, {small:true}, console.log);
 
     const server = app.listen(config.port, () => console.log(`App running ${config.port}`));

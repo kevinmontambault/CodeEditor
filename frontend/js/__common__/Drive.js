@@ -1,3 +1,5 @@
+import CryptoJS from 'crypto-js';
+
 function base64ToUint8Array(string){
     const binaryString = window.atob(string);
     const bytes = new Uint8Array(binaryString.length);
