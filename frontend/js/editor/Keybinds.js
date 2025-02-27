@@ -27,8 +27,9 @@ import {
     deleteSelectionForward,
     addCursorUp,
     addCursorDown,
+    addCursorOnSelection,
     fontSizeUp,
-    fontSizeDown,
+    fontSizeDown
 } from './Commands.js';
 
 // standard key presses
@@ -94,4 +95,6 @@ export default {
 
     'Ctrl+Equal': fontSizeUp,
     'Ctrl+Minus': fontSizeDown,
+
+    'Ctrl+Shift+KeyL': addCursorOnSelection,
 };

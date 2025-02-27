@@ -158,23 +158,23 @@ export default class SelectionRange{
 
         const lineRanges = [];
         if(this.isRightFacing()){
-            lineRanges.push({line:this.tail.line, start:this.tail.col, end:-1});
+            lineRanges.push({line:this.tail.line, start:this.tail.col, end:lines[this.tail.line].length});
 
             for(let lineIndex=this.tail.line+1; lineIndex<this.head.line; lineIndex++){
-                lineRanges.push({line:lineIndex, start:0, end:-1});
+                lineRanges.push({line:lineIndex, start:0, end:lines[lineIndex].length});
             }
 
             lineRanges.push({line:this.head.line, start:0, end:this.head.col});
         }
 
         else{
-            lineRanges.push({line:this.head.line, start:this.head.col, end:-1});
+            lineRanges.push({line:this.head.line, start:this.head.col, end:lines[this.head.line].length});
 
             for(let lineIndex=this.head.line+1; lineIndex<this.tail.line; lineIndex++){
                 lineRanges.push({line:lineIndex, start:0, end:lines[lineIndex].length});
             }
 
-            lineRanges.push({line:this.col.line, start:0, end:this.tail.col});
+            lineRanges.push({line:this.tail.line, start:0, end:this.tail.col});
         }
 
         return lineRanges;

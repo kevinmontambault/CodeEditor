@@ -256,8 +256,6 @@ export default class CodeArea extends HTMLElement{
         if(!font){ font = this._fontFamily; }
         if(!size){ size = this._fontSize; }
 
-        console.log(font, size)
-
         this.style.setProperty('--line-font-family', font);
         this.style.setProperty('--line-font-size', `${size}px`);
         this.style.setProperty('--line-highlight-radius', `${size*.2}px`);
