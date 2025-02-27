@@ -1,6 +1,7 @@
 import FileExplorer from './activities/FileExplorer.js';
 import ExitSession from './activities/ExitSession.js';
 import PickDirectory from './activities/PickDirectory.js';
+import SearchProject from './activities/SearchProject.js';
 import AddStyle from '../__common__/Style.js';
 
 AddStyle(/*css*/`
@@ -92,7 +93,7 @@ export default class ActivityBar extends HTMLElement{
         
         const activityButtonContainer = this.querySelector('.activity-button-container');
         const contentContainer = this.querySelector('.content-container');
-        for(const component of [FileExplorer]){
+        for(const component of [FileExplorer, SearchProject].filter(c => c.active !== false)){
             const activityButton = new ActivityButton(component.name, component.icon);
 
             const activity = new component();
@@ -113,7 +114,7 @@ export default class ActivityBar extends HTMLElement{
 
         // simple command buttons
         const commandButtonContainer = this.querySelector('.command-button-container');
-        for(const component of [PickDirectory, ExitSession]){
+        for(const component of [PickDirectory, ExitSession].filter(c => c.active !== false)){
             const activityButton = new ActivityButton(component.name, component.icon);
             commandButtonContainer.appendChild(activityButton);
             activityButton.addEventListener('click', () => component.command());
