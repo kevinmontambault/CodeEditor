@@ -158,7 +158,7 @@ export default class OnscreenKeyboard extends HTMLElement{
         this.classList.add('onscreen-keyboard', 'collapsed', 'flex-col');
 
         this.innerHTML = /*html*/`
-            <div class="cursor" type="auto"></div>
+            <div class="cursor" type="auto" style="left:0; top:0;"></div>
 
             <div></div>
 
@@ -285,7 +285,8 @@ export default class OnscreenKeyboard extends HTMLElement{
         this.lastHoveredElement = null;
 
         // position the cursor once the document loads
-        window.addEventListener('load', () => window.requestAnimationFrame(() => this.moveCursor(50, 50)));
+        if(document.readyState === 'completed'){ this.moveCursor(50, 50); }
+        else{ window.addEventListener('load', () => window.requestAnimationFrame(() => this.moveCursor(50, 50))); }
         
         // focus is changed on pointerdown  
         this.focusedElement = null;
@@ -627,11 +628,9 @@ export default class OnscreenKeyboard extends HTMLElement{
         this.cursorPosition.y = newY;
 
         if(this.orientation === 'portrait'){
-            this.cursor.style.left = `${Math.round(this.cursorPosition.y-6)}px`;
-            this.cursor.style.top = `${Math.round(this.windowSize.width - this.cursorPosition.x-9)}px`;
+            this.cursor.style.transform = `translate(${Math.round(this.cursorPosition.y-6)}px, ${Math.round(this.windowSize.width - this.cursorPosition.x-9)}px)`;
         }else{
-            this.cursor.style.left = `${Math.round(this.cursorPosition.x-9)}px`;
-            this.cursor.style.top = `${Math.round(this.cursorPosition.y-6)}px`;
+            this.cursor.style.transform = `translate(${Math.round(this.cursorPosition.x-9)}px, ${Math.round(this.cursorPosition.y-6)}px)`;
         }
 
         // pointer enter and leave events

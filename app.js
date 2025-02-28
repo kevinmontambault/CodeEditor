@@ -46,6 +46,14 @@ async function updateFile(filePath, deltas){
     return '';
 };
 
+function btoa(string) {
+    return Buffer.from(string, 'binary').toString('base64');
+}
+
+function atob(base64) {
+    return Buffer.from(base64, 'base64').toString('binary');
+}
+
 app.use('/', (req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'X-IV,X-HMAC');
