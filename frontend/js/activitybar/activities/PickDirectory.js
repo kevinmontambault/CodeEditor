@@ -2,17 +2,41 @@ import AddStyle from '/js/__common__/Style.js';
 import Popup from '/js/__common__/Popup.js';
 
 AddStyle(/*css*/`
+    .pick-directory-popup{
+        width: 350px;
+        height: 450px;
+    }
+
+    .pick-directory-popup .button-container{
+        justify-content: center;
+        gap: 5px;
+    }
+
+    .pick-directory-popup .button-container>div{
+        cursor: pointer;
+        background-color: purple;
+        color: white;
+        padding: 3px 5px;
+        width: 100px;
+    }
 `);
 
 class PickDirectoryPopup extends Popup{
     constructor(){
         super();
 
-        this.classList.add('pick-directory-popup');
+        this.classList.add('pick-directory-popup', 'flex-col');
 
         this.innerHTML = `
+            <div></div>
 
+            <div class="button-container flex-row">
+                <div class="cancel-button pointer-events flex-center">Cancel</div>
+                <div class="open-button pointer-events flex-center">Open</div>
+            </div>
         `;
+
+        this.querySelector('.cancel-button').addEventListener('click', () => this.remove());
     };
 };
 customElements.define('pick-directory-popup', PickDirectoryPopup);

@@ -3,8 +3,8 @@ export default class ExitSession extends HTMLElement{
     static name = 'exit-session';
     static active = document.referrer !== window.location.href;
 
-    static command = () => {
-        try{ document.exitFullscreen(); }catch(err){}
+    static command = async () => {
+        try{ await document.exitFullscreen(); }catch(err){}
         window.location.href = document.referrer;
     };
 };

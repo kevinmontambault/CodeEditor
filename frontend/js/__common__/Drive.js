@@ -1,4 +1,4 @@
-import forge from 'https://cdn.jsdelivr.net/npm/node-forge@1.3.1/+esm';
+import forge from 'http://localhost:3000/npm/node-forge@1.3.1/+esm';
 
 function base64ToUint8Array(string){
     const binaryString = window.atob(string);

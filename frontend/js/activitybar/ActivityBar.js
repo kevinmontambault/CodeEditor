@@ -2,6 +2,7 @@ import FileExplorer from './activities/FileExplorer.js';
 import ExitSession from './activities/ExitSession.js';
 import PickDirectory from './activities/PickDirectory.js';
 import SearchProject from './activities/SearchProject.js';
+import ToggleFullscreen from './activities/ToggleFullscreen.js';
 import AddStyle from '../__common__/Style.js';
 
 AddStyle(/*css*/`
@@ -114,7 +115,7 @@ export default class ActivityBar extends HTMLElement{
 
         // simple command buttons
         const commandButtonContainer = this.querySelector('.command-button-container');
-        for(const component of [PickDirectory, ExitSession].filter(c => c.active !== false)){
+        for(const component of [PickDirectory, ToggleFullscreen, ExitSession].filter(c => c.active !== false)){
             const activityButton = new ActivityButton(component.name, component.icon);
             commandButtonContainer.appendChild(activityButton);
             activityButton.addEventListener('click', () => component.command());
