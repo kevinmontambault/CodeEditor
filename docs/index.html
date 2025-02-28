@@ -30,8 +30,7 @@
             localStorage.setItem('hosts', JSON.stringify(hosts));
         }
 
-        window.history.replaceState({}, '', window.location.href);
-        window.location.href = `${host}/editor`;
+        window.location.href = `${host}/editor#${window.location.origin}${window.location.pathname}`;
     }
 
     const addHostCard = document.querySelector('.add-host-card');
