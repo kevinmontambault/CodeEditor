@@ -13,7 +13,7 @@
         hostCard.classList.add('host-card');
 
         hostCard.addEventListener('click', () => {
-            window.location.href = `${host.url}/editor`;
+            window.location.href = `${host.url}/editor#${window.location.origin}${window.location.pathname}`;
         });
 
         return hostCard;
