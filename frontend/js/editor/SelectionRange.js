@@ -80,12 +80,16 @@ export default class SelectionRange{
     static mergeSortedRanges(ranges){
         const kept = [...ranges];
         for(let i=kept.length-1; i>=1; i--){
-            if(!kept[i-1].contains(kept[i].start)){ continue; }
-
-            if(kept[i]._rightFacing){ kept[i-1].update(null, kept[i].end); }
-            else{ kept[i-1].update(kept[i].end, kept[i-1].start); }
-            
-            kept.splice(i, 1);
+            if(
+                kept[i-1].contains(kept[i].start)               ||
+                Position.equals(kept[i].start, kept[i-1].start) ||
+                Position.equals(kept[i].end, kept[i-1].end)
+            ){
+                if(kept[i]._rightFacing){ kept[i-1].update(null, kept[i].end); }
+                else{ kept[i-1].update(kept[i].end, kept[i-1].start); }
+                
+                kept.splice(i, 1);
+            }
         }
 
         return kept;
