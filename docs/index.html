@@ -30,6 +30,7 @@
             localStorage.setItem('hosts', JSON.stringify(hosts));
         }
 
+        window.history.replaceState({}, '', window.location.href);
         window.location.href = `${host}/editor`;
     }
 
