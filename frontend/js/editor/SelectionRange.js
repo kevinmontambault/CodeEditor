@@ -1,5 +1,4 @@
 import AddStyle from '../__common__/Style.js';
-import CodeLine from './CodeLine.js';
 import Position from './Position.js';
 
 AddStyle(/*css*/`
@@ -47,177 +46,182 @@ AddStyle(/*css*/`
 `);
 
 export class SelectionRangeHighlight extends HTMLElement{
-    constructor(line, head, tail, cursor=false){
+    constructor(line, start, end, cursor=null){
         super();
 
         this.classList.add('selection-range-highlight');
 
-        if(head < tail){
-            this.style.left = `${Math.min(line.length, head) * line.charWidth}px`;
-            this.style.width = `${(Math.min(line.length, tail)-head) * line.charWidth}px`;
-            this.classList.toggle('cursor-left', cursor);
-        }else{
-            this.style.left = `${Math.min(line.length, tail) * line.charWidth}px`;
-            this.style.width = `${(Math.min(line.length, head)-tail) * line.charWidth}px`;
-            this.classList.toggle('cursor-right', cursor);
-        }
+        this.style.left = `${Math.min(line.length, start) * line.charWidth}px`;
+        this.style.width = `${(Math.min(line.length, end)-start) * line.charWidth}px`;
+
+        this.cursorClass = cursor==='left' ? 'cursor-left' : cursor==='right' ? 'cursor-right' : null;
+        if(this.cursorClass){ this.classList.add(this.cursorClass); }
 
         line.insertSelectionHighlight(this);
+    };
+
+    resetAnimation(){
+        if(this.cursorClass){
+            this.classList.remove(this.cursorClass);
+            void(this.offsetWidth);
+            this.classList.add(this.cursorClass);
+        }
     };
 };
 customElements.define('selection-range-highlight', SelectionRangeHighlight);
 
 export default class SelectionRange{
-    static normalizeRanges(ranges){
-        return ranges.map(range => range.normal());
+    static mergeRanges(ranges){
+        ranges.sort((a, b) => Position.lessThan(a.start, b.start) ? -1 : 1);
+        return SelectionRange.mergeSortedRanges(ranges);
     };
 
-    static mergeRanges(ranges){
-        for(let i=ranges.length-1; i>=0; i--){
+    // merges ranges without a sort operation
+    static mergeSortedRanges(ranges){
+        const kept = [...ranges];
+        for(let i=kept.length-1; i>=1; i--){
+            if(!kept[i-1].contains(kept[i].start)){ continue; }
 
-            // check if range head intersects with any other ranges
-            for(let j=ranges.length-1; j>=0; j--){
-                if(i === j){ continue; }
-
-                if(ranges[j].merge(ranges[i])){
-                    ranges.splice(i, 1);
-                    break;
-                }
-            }
+            if(kept[i]._rightFacing){ kept[i-1].update(null, kept[i].end); }
+            else{ kept[i-1].update(kept[i].end, kept[i-1].start); }
+            
+            kept.splice(i, 1);
         }
 
-        return ranges;
+        return kept;
     };
 
-    constructor(head, tail=null){
-        this.head = head;
-        this.tail = tail || this.head;
+    constructor(editor, start, end=null){
+        this._editor = editor;
+        this._rendered = false;
 
-        this.empty = Position.equals(this.head, this.tail);
-
-        this.highlights = [];
+        this._highlightElements = [];
+        this.update(start, end||start.copy());
     };
 
     // returns whether a position is contained within this range
     contains(position){
-        if(this.isRightFacing()){ return Position.lessThan(position, this.head) && Position.greaterThan(position, this.tail); }
-        else{ return Position.lessThan(position, this.tail) && Position.greaterThan(position, this.head); }
+        return Position.greaterThan(position, this.start) && Position.lessThan(position, this.end);
     };
 
-    // returns a new range that is right-pointing
-    normal(){
-        return this.toRightFacing();
+    getSelectionLength(){
+        if(this.start.line === this.end.line){ return this.end.col - this.start.col; }
+        return this.end.getDocPosition() - this.start.getDocPosition();
     };
 
-    toRightFacing(){
-        return this.isRightFacing() ? this : new SelectionRange(this.tail, this.head);
-    };
+    // changes the start and endpoints of this selection range so a new one doesn't need to be created
+    update(start=null, end=null){
+        if(start === null || end === null){
+            if(start === null){ start = this.start; }
+            if(end   === null){ end = this.end; }
 
-    toLeftFacing(){
-        return this.isLeftFacing() ? this : new SelectionRange(this.tail, this.head);
-    };
-
-    // merge this range and a given range into a single range
-    // returns false if such an operation is not possible
-    merge(range){
-        if(range.empty){ return Position.equals(this.tail, range.head) || Position.equals(this.head, range.head)}
-        if(!this.contains(range.head)){ return false; }
-
-        if(this.isRightFacing()){
-            if(Position.greaterThan(this.tail, range.tail)){ this.tail = range.tail; }
-            else if(Position.lessThan(this.head, range.tail)){ this.head = range.tail; }
+            if(Position.greaterThan(start, end)){
+                this.start = end;
+                this.end = start;
+                this._rightFacing = !this._rightFacing;
+            }else{
+                this.start = start;
+                this.end = end;
+            }
         }else{
-            if(Position.greaterThan(this.head, range.tail)){ this.head = range.tail; }
-            else if(Position.lessThan(this.tail, range.tail)){ this.tail = range.tail; }
-        }
-
-        return true;
-    };
-
-    isLeftFacing(){
-        return Position.lessThan(this.head, this.tail);
-    };
-    
-    isRightFacing(){
-        return Position.greaterThan(this.head, this.tail);
-    };
-
-    isEmpty(){
-        return Position.equals(this.head, this.tail);
-    };
-
-    min(){
-        return this.isRightFacing() ? this.tail : this.head;
-    };
-    
-    max(){
-        return this.isLeftFacing() ? this.tail : this.head;
-    };
-
-    getPerLineRanges(lines){
-        if(this.head.line === this.tail.line){
-            if(this.isRightFacing()){ return [{line:this.head.line, start:this.tail.col, end:this.head.col}]; }
-            return [{line:this.head.line, start:this.head.col, end:this.tail.col}];
-        }
-
-        const lineRanges = [];
-        if(this.isRightFacing()){
-            lineRanges.push({line:this.tail.line, start:this.tail.col, end:lines[this.tail.line].length});
-
-            for(let lineIndex=this.tail.line+1; lineIndex<this.head.line; lineIndex++){
-                lineRanges.push({line:lineIndex, start:0, end:lines[lineIndex].length});
+            if(Position.greaterThan(start, end)){
+                this.start = end;
+                this.end = start;
+                this._rightFacing = false;
+            }else{
+                this.start = start;
+                this.end = end;
+                this._rightFacing = true;
             }
-
-            lineRanges.push({line:this.head.line, start:0, end:this.head.col});
         }
 
-        else{
-            lineRanges.push({line:this.head.line, start:this.head.col, end:lines[this.head.line].length});
-
-            for(let lineIndex=this.head.line+1; lineIndex<this.tail.line; lineIndex++){
-                lineRanges.push({line:lineIndex, start:0, end:lines[lineIndex].length});
-            }
-
-            lineRanges.push({line:this.tail.line, start:0, end:this.tail.col});
-        }
-
-        return lineRanges;
+        this._empty = Position.equals(this.start, this.end);
+        this._rendered = false;
     };
 
-    apply(lines){
-        this.clear();
-
-        if(this.head.line === this.tail.line){
-            this.highlights.push(new SelectionRangeHighlight(lines[this.head.line], this.head.col, this.tail.col, true));
+    render(force){
+        if(this._rendered && !force){
+            for(const e of this._highlightElements){ e.resetAnimation(); }
+            return;
         }
         
-        else{
-            if(this.isRightFacing()){
-                const startLine = lines[this.tail.line];
-                this.highlights.push(new SelectionRangeHighlight(startLine, this.tail.col, startLine.length, false));
+        this._rendered = true;
 
-                for(let lineIndex=this.tail.line+1; lineIndex<this.head.line; lineIndex++){
-                    this.highlights.push(new SelectionRangeHighlight(lines[lineIndex], 0, lines[lineIndex].length));
-                }
+        for(const e of this._highlightElements){ e.remove(); }
+        this._highlightElements = [];
 
-                this.highlights.push(new SelectionRangeHighlight(lines[this.head.line], this.head.col, 0, true));
-            }
+        const ranges = this.getPerLineSelectionRanges();
 
-            else{
-                const startLine = lines[this.head.line];
-                this.highlights.push(new SelectionRangeHighlight(startLine, this.head.col, startLine.length, true));
+        let normalRanges;
+        if(this._rightFacing){
+            normalRanges = ranges.slice(0, -1);
+            const lastLine = ranges[ranges.length-1];
+            this._highlightElements.push(new SelectionRangeHighlight(this._editor.lines[lastLine.start.line], lastLine.start.col, lastLine.end.col, 'right'));
+        }else{
+            normalRanges = ranges.slice(1);
+            this._highlightElements.push(new SelectionRangeHighlight(this._editor.lines[ranges[0].start.line], ranges[0].start.col, ranges[0].end.col, 'left'));
+        }
 
-                for(let lineIndex=this.head.line+1; lineIndex<this.tail.line; lineIndex++){
-                    this.highlights.push(new SelectionRangeHighlight(lines[lineIndex], 0, lines[lineIndex].length));
-                }
-
-                this.highlights.push(new SelectionRangeHighlight(lines[this.tail.line], this.tail.col, 0, false));
-            }
+        for(const range of normalRanges){
+            const highlightElement = new SelectionRangeHighlight(this._editor.lines[range.start.line], range.start.col, range.end.col, null);
+            this._highlightElements.push(highlightElement);
         }
     };
 
-    clear(){
-        for(const highlight of this.highlights){ highlight.remove(); }
-        this.highlights = [];
+    remove(){
+        for(const e of this._highlightElements){ e.remove(); }
+        this._highlightElements = [];
+        this._rendered = false;
+    };
+
+    getPerLineSelectionRanges(){
+        if(this.start.line === this.end.line){ return [this]; }
+
+        const firstLine = this._editor.range(this.start, this._editor.position(this.start.line, this._editor.lines[this.start.line].length));
+        const lastLine = this._editor.range(this._editor.position(this.end.line, 0), this.end);
+
+        const subLineCount = this.end.line - this.start.line - 1;
+        if(!subLineCount){ return [firstLine, lastLine]; }
+
+        return [
+            firstLine,
+            ...Array.from(new Array(subLineCount), (_, i) => {
+                const lineIndex = this.start.line+i+1;
+                return this._editor.range(this._editor.position(lineIndex, 0), this._editor.position(lineIndex, this._editor.lines[lineIndex].length))
+            }),
+            lastLine
+        ];
+    };
+
+    get isRightFacing(){
+        return this._rightFacing;
+    };
+
+    get isLeftFacing(){
+        return !this._rightFacing;
+    };
+
+    get isEmpty(){
+        return this._empty;
+    };
+
+    get head(){
+        return this._rightFacing ? this.end : this.start;
+    };
+
+    set head(position){
+        if(this._rightFacing){ this.update(null, position); }
+        else{ this.update(position, null); }
+        return position;
+    };
+
+    get tail(){
+        return this._rightFacing ? this.start : this.end;
+    };
+
+    set tail(position){
+        if(this._rightFacing){ this.update(position, null); }
+        else{ this.update(null, position); }
+        return position;
     };
 };

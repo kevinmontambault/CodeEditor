@@ -253,7 +253,6 @@ export default class CodeArea extends HTMLElement{
             const newPosition = new SelectionRange(new Position(downPosition.line, wordBounds.end), new Position(downPosition.line, wordBounds.start));
             const ranges = downEvent.ctrlKey ? [...this.ranges, newPosition] : [newPosition];
 
-
             this.setSelectionRanges(ranges);
         });
 
@@ -264,7 +263,7 @@ export default class CodeArea extends HTMLElement{
             const selectedLine = this._lines[downPosition.line];
             if(!selectedLine){ return; }
             
-            const newPosition = new SelectionRange(new Position(downPosition.line, Math.min(downPosition.col, selectedLine.length)));
+            const newPosition = this.range(this.position(downPosition.line, Math.min(downPosition.col, selectedLine.length)));
             const ranges = downEvent.ctrlKey ? [...this.ranges, newPosition] : [newPosition];
 
             const moveCallback = moveEvent => {
@@ -360,11 +359,11 @@ export default class CodeArea extends HTMLElement{
         updateIndexes(this);
         updateGutterWidth(this);
         
-        for(const range of this.ranges){ range.apply(this.lines); }
+        for(const range of this.ranges){ range.render(); }
         reload(this, true);
     };
 
-    deleteText(rangeOrRanges){
+    deleteRanges(rangeOrRanges){
         const ranges = Array.isArray(rangeOrRanges) ? rangeOrRanges.map(range => range.toRightFacing()) : [rangeOrRanges.toRightFacing()];
         ranges.sort((a, b) => Position.greaterThan(a.tail, b.tail) ? -1 : 1);
 
@@ -492,15 +491,24 @@ export default class CodeArea extends HTMLElement{
     };
 
     setSelectionRanges(ranges){
-        for(const range of this.ranges){ range.clear(); }
-    
-        this.ranges = SelectionRange.mergeRanges(ranges);
-        for(const range of this.ranges){ range.apply(this._lines); }
+        ranges = SelectionRange.mergeRanges(ranges);
+
+        // remove old ranges
+        const newRanges = new Set(ranges);
+        for(const range of this.ranges){
+            if(!newRanges.has(range)){
+                range.remove();
+            }
+        }
+
+        for(const range of ranges){ range.render(); }
+        
+        this.ranges = ranges;
     };
 
     // returns the line and column number of a given x/y position relative to the code window
     getPositionAt(x, y){
-        return new Position(Math.floor((y + this._renderedState.scrollPosition) / this._lineHeight), Math.floor((x - this._lineNumberGutterWidth) / this._fontWidth));
+        return this.position(Math.floor((y + this._renderedState.scrollPosition) / this._lineHeight), Math.floor((x - this._lineNumberGutterWidth) / this._fontWidth));
     };
 
     // scrolls to a position on the table
@@ -525,10 +533,20 @@ export default class CodeArea extends HTMLElement{
 
     // execute an editor command
     exec(command){
-        if(command.delete?.length){ this.delete(command.delete); }
+        if(command.delete?.length){ this.deleteRanges(command.delete); }
         if(command.insert?.length){ this.insert(command.insert); }
         if(command.ranges){ this.setSelectionRanges(command.ranges); }
         return true;
+    };
+
+    // returns a new selection range
+    range(...args){
+        return new SelectionRange(this, ...args);
+    };
+    
+    // returns a new document position
+    position(...args){
+        return new Position(this, ...args);
     };
 
     get fontWidth(){
@@ -540,7 +558,7 @@ export default class CodeArea extends HTMLElement{
     };
 
     get lines(){
-        return [...this._lines];
+        return this._lines;
     };
 };
 customElements.define('code-area', CodeArea);

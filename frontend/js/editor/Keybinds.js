@@ -25,6 +25,7 @@ import {
     selectDocEnd,
     selectAll,
     deleteSelectionForward,
+    deleteSelectionBackwards,
     addCursorUp,
     addCursorDown,
     addCursorOnSelection,
@@ -50,6 +51,7 @@ export default {
     'Delete': deleteSelectionForward,
     // 'Ctrl+Delete': deleteGroupForward,
     // 'Alt+Delete': deleteSubwordForward,
+    'Backspace': deleteSelectionBackwards,
 
     // 'Enter': insertNewline,
     // 'Ctrl+Enter': insertBlankLine,
