@@ -152,34 +152,33 @@ export const getPositionFrom = (editor, position, charDelta) => {
 };
 
 export const deleteSelectionForward = editor => {
-    const normalizedRanges = editor.ranges.map(range => range.normal());
-    const deleteRanges = normalizedRanges.map(range => {
-        if(!range.empty){ return range; }
-        return editor.range(getCharPositionRight(editor, range.head), range.tail);
+    const deleteRanges = editor.ranges.map(range => {
+        if(!range.isEmpty){ return range; }
+        return editor.range(range.start, getCharPositionRight(editor, range.end));
     });
 
     return editor.exec({
         delete: deleteRanges,
-        ranges: deleteRanges.map(range => editor.range(range.tail, range.tail))
+        ranges: editor.ranges.map(range => editor.range(range.tail))
     });
 };
 
 export const deleteSelectionBackwards = editor => {
-    const normalizedRanges = editor.ranges.map(range => range.normal());
+//     const normalizedRanges = editor.ranges.map(range => range.normal());
 
-    const deleteRanges = normalizedRanges.map(range => {
-        if(!range.empty){ return range; }
-        return editor.range(getCharPositionLeft(editor, range.head), range.tail);
-    });
+//     const deleteRanges = normalizedRanges.map(range => {
+//         if(!range.empty){ return range; }
+//         return editor.range(getCharPositionLeft(editor, range.head), range.tail);
+//     });
 
-    const selectionRanges = normalizedRanges.map(range => {
-        if(range.empty){ return editor.range(); }
-    });
+//     // const selectionRanges = normalizedRanges.map(range => {
+//     //     if(range.empty){ return editor.range(); }
+//     // });
 
-    return editor.exec({
-        delete: deleteRanges,
-        ranges: deleteRanges.map(range => editor.range(getCharPositionLeft(editor, range.tail)))
-    });
+//     return editor.exec({
+//         delete: deleteRanges,
+//         // ranges: deleteRanges.map(range => editor.range(getCharPositionLeft(editor, range.tail)))
+//     });
 };
 
 export const insertCharacter = character => editor => {
@@ -369,7 +368,7 @@ export const addCursorUp = editor => {
 export const addCursorOnSelection = editor => {
     return editor.exec({
         ranges: editor.ranges.filter(range => !range.isEmpty).map(range => {
-            return range.getPerLineSelectionRanges().map(line => editor.range(line.end));
+            return range.getPerLineSelectionRanges().map(line => editor.range(line.line, line.end));
         }).flat()
     });
 };

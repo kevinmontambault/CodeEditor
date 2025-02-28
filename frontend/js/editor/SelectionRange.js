@@ -46,13 +46,15 @@ AddStyle(/*css*/`
 `);
 
 export class SelectionRangeHighlight extends HTMLElement{
-    constructor(line, start, end, cursor=null){
+    constructor(lineRange, cursor=null){
         super();
 
         this.classList.add('selection-range-highlight');
 
-        this.style.left = `${Math.min(line.length, start) * line.charWidth}px`;
-        this.style.width = `${(Math.min(line.length, end)-start) * line.charWidth}px`;
+        const line = lineRange.getLine();
+
+        this.style.left = `${Math.min(line.length, lineRange.start) * line.charWidth}px`;
+        this.style.width = `${(Math.min(line.length, lineRange.end)-lineRange.start) * line.charWidth}px`;
 
         this.cursorClass = cursor==='left' ? 'cursor-left' : cursor==='right' ? 'cursor-right' : null;
         if(this.cursorClass){ this.classList.add(this.cursorClass); }
@@ -70,8 +72,27 @@ export class SelectionRangeHighlight extends HTMLElement{
 };
 customElements.define('selection-range-highlight', SelectionRangeHighlight);
 
+class LineRange{
+    constructor(editor, line, start, end, includesLineEnd=false){
+        this._editor = editor;
+
+        this.line  = line;
+        this.start = start;
+        this.end   = end;
+        this.includesLineEnd = includesLineEnd;
+    };
+
+    getLine(){
+        return this._editor.lines[this.line];
+    };
+
+    get isFullLine(){
+        return !this.start && this.getLine().length === this.end;
+    };
+};
+
 export default class SelectionRange{
-    static mergeRanges(ranges){
+    static mergeAndSortRanges(ranges){
         ranges.sort((a, b) => Position.lessThan(a.start, b.start) ? -1 : 1);
         return SelectionRange.mergeSortedRanges(ranges);
     };
@@ -154,21 +175,19 @@ export default class SelectionRange{
         for(const e of this._highlightElements){ e.remove(); }
         this._highlightElements = [];
 
-        const ranges = this.getPerLineSelectionRanges();
+        const lineRanges = this.getPerLineSelectionRanges();
 
-        let normalRanges;
+        let normalLineRanges;
         if(this._rightFacing){
-            normalRanges = ranges.slice(0, -1);
-            const lastLine = ranges[ranges.length-1];
-            this._highlightElements.push(new SelectionRangeHighlight(this._editor.lines[lastLine.start.line], lastLine.start.col, lastLine.end.col, 'right'));
+            normalLineRanges = lineRanges.slice(0, -1);
+            this._highlightElements.push(new SelectionRangeHighlight(lineRanges[lineRanges.length-1], 'right'));
         }else{
-            normalRanges = ranges.slice(1);
-            this._highlightElements.push(new SelectionRangeHighlight(this._editor.lines[ranges[0].start.line], ranges[0].start.col, ranges[0].end.col, 'left'));
+            normalLineRanges = lineRanges.slice(1);
+            this._highlightElements.push(new SelectionRangeHighlight(lineRanges[0], 'left'));
         }
 
-        for(const range of normalRanges){
-            const highlightElement = new SelectionRangeHighlight(this._editor.lines[range.start.line], range.start.col, range.end.col, null);
-            this._highlightElements.push(highlightElement);
+        for(const range of normalLineRanges){
+            this._highlightElements.push(new SelectionRangeHighlight(range, null));
         }
     };
 
@@ -179,10 +198,10 @@ export default class SelectionRange{
     };
 
     getPerLineSelectionRanges(){
-        if(this.start.line === this.end.line){ return [this]; }
+        if(this.start.line === this.end.line){ return [new LineRange(this._editor, this.start.line, this.start.col, this.end.col, false)]; }
 
-        const firstLine = this._editor.range(this.start, this._editor.position(this.start.line, this._editor.lines[this.start.line].length));
-        const lastLine = this._editor.range(this._editor.position(this.end.line, 0), this.end);
+        const firstLine = new LineRange(this._editor, this.start.line, this.start.col, this._editor.lines[this.start.line].length, true);
+        const lastLine = new LineRange(this._editor, this.end.line, 0, this.end.col, false);
 
         const subLineCount = this.end.line - this.start.line - 1;
         if(!subLineCount){ return [firstLine, lastLine]; }
@@ -191,7 +210,7 @@ export default class SelectionRange{
             firstLine,
             ...Array.from(new Array(subLineCount), (_, i) => {
                 const lineIndex = this.start.line+i+1;
-                return this._editor.range(this._editor.position(lineIndex, 0), this._editor.position(lineIndex, this._editor.lines[lineIndex].length))
+                return new LineRange(this._editor, lineIndex, 0, this._editor.lines[lineIndex].length, true)
             }),
             lastLine
         ];

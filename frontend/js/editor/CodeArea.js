@@ -244,21 +244,37 @@ export default class CodeArea extends HTMLElement{
         // refresh the row visibility whenever the container changes size
         (new ResizeObserver(() => reload(this))).observe(this._tableContainer);
 
-        // a word was double clicked
-        this.addEventListener('dblclick', downEvent => {
-            const downPosition = this.getPositionAt(downEvent.offsetX, downEvent.offsetY);
-            const wordBounds = getWordBoundsAtPosition(this, downPosition);
-            if(!wordBounds){ return; }
+        // a word was double or triple clicked
+        this.addEventListener('click', clickEvent => {
+            const downPosition = this.getPositionAt(clickEvent.offsetX, clickEvent.offsetY);
 
-            const newPosition = new SelectionRange(new Position(downPosition.line, wordBounds.end), new Position(downPosition.line, wordBounds.start));
-            const ranges = downEvent.ctrlKey ? [...this.ranges, newPosition] : [newPosition];
+            if(clickEvent.detail === 2){
+                const wordBounds = getWordBoundsAtPosition(this, downPosition);
+                if(!wordBounds){ return; }
 
-            this.setSelectionRanges(ranges);
+                const newRange = this.range(this.position(downPosition.line, wordBounds.start), this.position(downPosition.line, wordBounds.end));
+                const ranges = clickEvent.ctrlKey ? [...this.ranges, newRange] : [newRange];
+                this.setSelectionRanges(ranges);
+            }
+
+            else if(clickEvent.detail === 3){
+                const endPosition = downPosition.line<this._lines.length-1 ? this.position(downPosition.line+1, 0) : this.position(downPosition.line, this._lines[downPosition.line].length);
+                const newRange = this.range(this.position(downPosition.line, 0), endPosition);
+                const ranges = clickEvent.ctrlKey ? [...this.ranges, newRange] : [newRange];
+                this.setSelectionRanges(ranges);
+            }
+            
+            else if(clickEvent.detail > 3){
+                this.setSelectionRanges([this.range(this.position(0, 0), this.position(this._lines.length-1, this._lines[this._lines.length-1].length))]);
+            }
         });
 
         // cursor selection and dragging
         this.addEventListener('pointerdown', downEvent => {
             const downPosition = this.getPositionAt(downEvent.offsetX, downEvent.offsetY);
+
+            // if you pointerdown on a selected area, ignore it?
+            console.log(downEvent)
 
             const selectedLine = this._lines[downPosition.line];
             if(!selectedLine){ return; }
@@ -363,23 +379,18 @@ export default class CodeArea extends HTMLElement{
         reload(this, true);
     };
 
-    deleteRanges(rangeOrRanges){
-        const ranges = Array.isArray(rangeOrRanges) ? rangeOrRanges.map(range => range.toRightFacing()) : [rangeOrRanges.toRightFacing()];
-        ranges.sort((a, b) => Position.greaterThan(a.tail, b.tail) ? -1 : 1);
+    deleteRanges(ranges){
+        const lineRanges = SelectionRange.mergeAndSortRanges(ranges).map(range => range.getPerLineSelectionRanges()).flat().reverse();
 
-        for(const range of ranges){
-            if(range.head.line === range.tail.line){
-                const line = this.getLine(range.tail.line);
-                line.setText(line.text.slice(0, range.tail.col) + line.text.slice(range.head.col, line.length));
+        for(const lineRange of lineRanges){
+            const line = lineRange.getLine();
+
+            if(lineRange.includesLineEnd && line.nextLine){
+                line.setText(line.text + line.nextLine.text);
+                this.removeRow(line.nextLine);
             }
 
-            else{
-                const firstLine = this.getLine(range.tail.line);
-                const lastLine = this.getLine(range.head.line);
-                firstLine.setText(firstLine.text.slice(0, range.tail.col) + lastLine.text.slice(range.head.col, lastLine.length));
-
-                this.removeRows(range.tail.line+1, range.head.line);
-            }
+            line.setText(line.text.slice(0, lineRange.start) + line.text.slice(lineRange.end, line.length));
         }
     };
 
@@ -421,7 +432,7 @@ export default class CodeArea extends HTMLElement{
         if(index <= this._renderedState.rowEnd){ reload(this, true); }
     };
 
-    // Removes a single row from the table
+    // removes a single row from the table
     removeRow(row){
         if(row.parentArea !== this){ return false; }
 
@@ -431,34 +442,14 @@ export default class CodeArea extends HTMLElement{
         this._lines.splice(removingIndex, 1);
         delete row.parentArea;
 
+        if(row.prevLine){ row.prevLine.nextLine = row.nextLine; }
+        if(row.nextLine){
+            row.nextLine.prevLine = row.prevLine;
+            row.nextLine.invalidateState();
+        }
+
         this._indexesValid = removingIndex === this._lines.length;
-
-        if(removingIndex <= this._renderedState.rowEnd){ reload(this); }
-        return true;
-    };
-
-    // Removes a list of rows from the table
-    removeRows(start, end){
-        const prevLine = this.getLine(start);
-
-        if(end < this._lines.length){
-            const nextLine = this.getLine(end+1);
-            prevLine.nextLine = nextLine
-            nextLine.prevLine = prevLine;
-            nextLine.invalidateState();
-        }else{
-            prevLine.nextLine = null;
-        }
-
-        for(let i=end; i>=start; i--){
-            const line = this.getLine(i);
-            delete line.parentArea;
-        }
-
-        this._lines.splice(start, end-start+1);
-
-        this._indexesValid = false;
-        reload(this, true);
+        if(removingIndex <= this._renderedState.rowEnd){ reload(this, true); }
     };
     
     // removes all lines from the code area
@@ -491,7 +482,7 @@ export default class CodeArea extends HTMLElement{
     };
 
     setSelectionRanges(ranges){
-        ranges = SelectionRange.mergeRanges(ranges);
+        ranges = SelectionRange.mergeAndSortRanges(ranges);
 
         // remove old ranges
         const newRanges = new Set(ranges);
