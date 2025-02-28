@@ -1,7 +1,8 @@
 import AddStyle from '../__common__/Style.js';
+import Drive    from '../__common__/Drive.js';
 
-import EditorContext from './EditorContext.js';
 import EditorTab from './EditorTab.js';
+import CodeArea from './CodeArea.js';
 
 let instanceResolver;
 let instance = new Promise(resolve => instanceResolver = resolve);
@@ -59,7 +60,26 @@ export class CodeEditor extends HTMLElement{
         if(existingTab){ return existingTab.active = true; }
 
         // create a new tab and editor context
-        const context = new EditorContext(fileName, filePath);
+        const context = new CodeArea(fileName, filePath);
+
+        if(this.fileContentCache.has(filePath)){
+            context.setText(this.fileContentCache.get(filePath));
+        }else{
+            (async () => {
+                context.classList.add('loading');
+                const response = await Drive.readFile(filePath);
+                context.classList.remove('loading');
+    
+                if(response.success){
+                    this.fileContentCache.set(filePath, response.text);
+                    context.setText(response.text);
+                    // this.setText(response.text.replace(/ /g, '\t'));
+                }else{
+                    // errorText.innerText = 'Failed to fetch file';
+                    // errorText.classList.remove('hidden');
+                }
+            })();
+        }
 
         const tab = new EditorTab(fileName, filePath, context);
         this.querySelector('.tab-container').appendChild(tab);

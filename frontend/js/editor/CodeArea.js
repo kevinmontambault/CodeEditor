@@ -1,7 +1,11 @@
 import AddStyle from '../__common__/Style.js';
 
-import CodeLine from './CodeLine.js';
-import Position from './Position.js';
+import SelectionRange from './SelectionRange.js';
+import Position       from './Position.js';
+import CodeLine       from './CodeLine.js';
+import Keybinds       from './Keybinds.js';
+
+import {insertCharacter, getWordBoundsAtPosition} from './Commands.js';
 
 AddStyle(/*css*/`
     .code-area{
@@ -9,6 +13,7 @@ AddStyle(/*css*/`
         position: absolute;
         inset: 0;
         overflow: hidden;
+        cursor: text;
     }
 
     .code-area .table-container{
@@ -144,6 +149,7 @@ export default class CodeArea extends HTMLElement{
         super();
 
         this.classList.add('code-area');
+        this.toggleAttribute('focusable', true);
 
         this.innerHTML = /*html*/`
             <div class="table-container">
@@ -177,6 +183,9 @@ export default class CodeArea extends HTMLElement{
         this._indexesValid = true;
         this._queuedReload = null;
         this._forceReloadRows = false;
+
+        this._keybinds = Keybinds;
+        this.ranges = [];
         
         // scrolling with wheel
         this.addEventListener('wheel', e => this.scrollTo(this._queuedState.scrollTarget+e.deltaY));
@@ -234,6 +243,58 @@ export default class CodeArea extends HTMLElement{
 
         // refresh the row visibility whenever the container changes size
         (new ResizeObserver(() => reload(this))).observe(this._tableContainer);
+
+        // a word was double clicked
+        this.addEventListener('dblclick', downEvent => {
+            const downPosition = this.getPositionAt(downEvent.offsetX, downEvent.offsetY);
+            const wordBounds = getWordBoundsAtPosition(this, downPosition);
+            if(!wordBounds){ return; }
+
+            const newPosition = new SelectionRange(new Position(downPosition.line, wordBounds.end), new Position(downPosition.line, wordBounds.start));
+            const ranges = downEvent.ctrlKey ? [...this.ranges, newPosition] : [newPosition];
+
+
+            this.setSelectionRanges(ranges);
+        });
+
+        // cursor selection and dragging
+        this.addEventListener('pointerdown', downEvent => {
+            const downPosition = this.getPositionAt(downEvent.offsetX, downEvent.offsetY);
+
+            const selectedLine = this._lines[downPosition.line];
+            if(!selectedLine){ return; }
+            
+            const newPosition = new SelectionRange(new Position(downPosition.line, Math.min(downPosition.col, selectedLine.length)));
+            const ranges = downEvent.ctrlKey ? [...this.ranges, newPosition] : [newPosition];
+
+            const moveCallback = moveEvent => {
+                const movePosition = this.getPositionAt(moveEvent.offsetX, moveEvent.offsetY);
+                newPosition.head = movePosition;
+                this.setSelectionRanges(ranges);
+            };
+
+            window.addEventListener('pointermove', moveCallback);
+            window.addEventListener('pointerup', () => window.removeEventListener('pointermove', moveCallback), {once:true});
+
+            this.setSelectionRanges(ranges);
+        });
+
+        // keyboard presses
+        this.addEventListener('keydown', downEvent => {
+            const keyString = [];
+            if(downEvent.ctrlKey){ keyString.push('Ctrl'); }
+            if(downEvent.shiftKey){ keyString.push('Shift'); }
+            if(downEvent.altKey){ keyString.push('Alt'); }
+            keyString.push(downEvent.code);
+            const shortcutCode = keyString.join('+');
+
+            if(this._keybinds[shortcutCode]?.(this)){ return downEvent.preventDefault(); }
+            if(downEvent.key.length === 1 && insertCharacter(downEvent.key)(this)){ return downEvent.preventDefault(); }
+
+            console.log(shortcutCode)
+        });
+
+        this.setFont("'Cascadia Mono', monospace", 14);
     };
 
     set lineHeight(height){
@@ -277,6 +338,11 @@ export default class CodeArea extends HTMLElement{
         return true;
     };
 
+    setTheme(){
+        // TODO
+        this.setText(this.text);
+    };
+
     setText(newText){
         this.clear();
 
@@ -293,7 +359,8 @@ export default class CodeArea extends HTMLElement{
         this._indexesValid = false;
         updateIndexes(this);
         updateGutterWidth(this);
-
+        
+        for(const range of this.ranges){ range.apply(this.lines); }
         reload(this, true);
     };
 
@@ -424,6 +491,13 @@ export default class CodeArea extends HTMLElement{
         return this._lines[Math.floor((y + this._renderedState.scrollPosition) / this._lineHeight)] || null;
     };
 
+    setSelectionRanges(ranges){
+        for(const range of this.ranges){ range.clear(); }
+    
+        this.ranges = SelectionRange.mergeRanges(ranges);
+        for(const range of this.ranges){ range.apply(this._lines); }
+    };
+
     // returns the line and column number of a given x/y position relative to the code window
     getPositionAt(x, y){
         return new Position(Math.floor((y + this._renderedState.scrollPosition) / this._lineHeight), Math.floor((x - this._lineNumberGutterWidth) / this._fontWidth));
@@ -449,8 +523,24 @@ export default class CodeArea extends HTMLElement{
         }
     };
 
+    // execute an editor command
+    exec(command){
+        if(command.delete?.length){ this.delete(command.delete); }
+        if(command.insert?.length){ this.insert(command.insert); }
+        if(command.ranges){ this.setSelectionRanges(command.ranges); }
+        return true;
+    };
+
     get fontWidth(){
         return this._fontWidth;
+    };
+
+    get text(){
+        return this._lines.map(line => line.text).join('\n');
+    };
+
+    get lines(){
+        return [...this._lines];
     };
 };
 customElements.define('code-area', CodeArea);
