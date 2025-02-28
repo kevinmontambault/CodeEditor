@@ -692,7 +692,7 @@ export default class OnscreenKeyboard extends HTMLElement{
     };
 
     click(buttons){
-        return this.mouseDown(buttons) && this.mouseUp(buttons);
+        return this.mouseDown(buttons) && this.mouseUp(buttons) && (buttons!==3 || this.contextMenu());
     };
 
     leftClick(){
@@ -771,6 +771,18 @@ export default class OnscreenKeyboard extends HTMLElement{
 
         delete this.clickedButtonsMap[button];
 
+        return true;
+    };
+
+    contextMenu(){
+        const contextArgs = {
+            bubbles: true,
+            cancelable: true,
+            clientX: this.cursorPosition.x,
+            clientY: this.cursorPosition.y,
+        };
+
+        elementAtPosition.dispatchEvent(Object.assign(new MouseEvent('contextmenu', contextArgs), {virtual:true}));
         return true;
     };
 
