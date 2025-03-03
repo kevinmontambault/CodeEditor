@@ -30,6 +30,24 @@ export default class Position{
     };
 
     getDocPosition(){
-        this._editor.lines[this.line].getDocPosition() + this.col;
+        return this._editor.lines[this.line].getDocPosition() + this.col;
+    };
+
+    shiftDocPosition(documentPositionDelta){
+        return this.setDocPosition(this.getDocPosition() + documentPositionDelta);
+    };
+
+    setDocPosition(newDocumentPosition){
+        let newLine = this.line;
+        let newLinePosition;
+        while(this._editor.lines[newLine]){
+            newLinePosition = this._editor.lines[newLine].getDocPosition();
+            if(newDocumentPosition < newLinePosition){ newLine -= 1; }
+            else if(newDocumentPosition > newLinePosition+this._editor.lines[newLine].length){ newLine += 1; }
+            else{ break; }
+        }
+        if(!this._editor.lines[newLine]){ return new Position(this._editor, 0, 0); }
+
+        return new Position(this._editor, newLine, newDocumentPosition-newLinePosition);
     };
 };

@@ -216,6 +216,16 @@ export default class SelectionRange{
         ];
     };
 
+    shiftDocPosition(documentPositionDelta){
+        return this.setDocPosition(this.start.getDocPosition() + documentPositionDelta);
+    };
+
+    setDocPosition(newDocumentPosition){
+        const newStart = this.start.setDocPosition(newDocumentPosition);
+        if(this._empty){ return this.update(newStart, newStart.copy()); }
+        else{ return this.update(newStart, this.end.setDocPosition(newDocumentPosition)); }
+    };
+
     get isRightFacing(){
         return this._rightFacing;
     };

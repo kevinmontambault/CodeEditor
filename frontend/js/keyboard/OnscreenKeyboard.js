@@ -50,6 +50,7 @@ AddStyle(/*css*/`
 
     .onscreen-keyboard .cursor[type="text"]{
         background-image: url('/static/img/ibeam.png');
+        filter: invert(100%);
     }
 
     .onscreen-keyboard .center-container, .onscreen-keyboard .keyboard-container, .onscreen-keyboard .key-row{

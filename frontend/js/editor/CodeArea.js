@@ -379,9 +379,26 @@ export default class CodeArea extends HTMLElement{
         reload(this, true);
     };
 
-    deleteRanges(ranges){
-        const lineRanges = SelectionRange.mergeAndSortRanges(ranges).map(range => range.getPerLineSelectionRanges()).flat().reverse();
+    deleteRanges(ranges, shiftSelections){
+        const deleteRanges = SelectionRange.mergeAndSortRanges(ranges);
+        const lineRanges = deleteRanges.map(range => range.getPerLineSelectionRanges()).flat().reverse();
 
+        // stash old selection starts before the document is invalidated
+        const oldSelectionStartPositions = shiftSelections.map(selection => selection.start.getDocPosition());
+
+        // calculate new selection starts
+        let j = 0;
+        let positionDelta = 0;
+        const newSelectionStartPositions = shiftSelections.map((selection, i) => {
+            while(j<deleteRanges.length && Position.greaterThan(selection.start, deleteRanges[j].start)){
+                positionDelta -= deleteRanges[j].getSelectionLength();
+                j += 1;
+            }
+
+            return oldSelectionStartPositions[i] + positionDelta;
+        });
+
+        // modify text
         for(const lineRange of lineRanges){
             const line = lineRange.getLine();
 
@@ -392,9 +409,18 @@ export default class CodeArea extends HTMLElement{
 
             line.setText(line.text.slice(0, lineRange.start) + line.text.slice(lineRange.end, line.length));
         }
+
+        // update selection positions
+        for(const [i, selection] of shiftSelections.entries()){
+            if(oldSelectionStartPositions[i] !== newSelectionStartPositions[i]){
+                selection.setDocPosition(newSelectionStartPositions[i]);
+            }
+        }
+
+        return SelectionRange.mergeSortedRanges(shiftSelections);
     };
 
-    insertText(newText, position){
+    insertText(textRanges, shiftSelections){
 
     };
 
@@ -481,8 +507,7 @@ export default class CodeArea extends HTMLElement{
         return this._lines[Math.floor((y + this._renderedState.scrollPosition) / this._lineHeight)] || null;
     };
 
-    setSelectionRanges(ranges){
-        ranges = SelectionRange.mergeAndSortRanges(ranges);
+    setSortedSelectionRanges(ranges){
 
         // remove old ranges
         const newRanges = new Set(ranges);
@@ -492,9 +517,14 @@ export default class CodeArea extends HTMLElement{
             }
         }
 
+        console.log(ranges.map(r => r.start.getDocPosition()))
+    
         for(const range of ranges){ range.render(); }
-        
         this.ranges = ranges;
+    };
+
+    setSelectionRanges(ranges){
+        return this.setSortedSelectionRanges(SelectionRange.mergeAndSortRanges(ranges));
     };
 
     // returns the line and column number of a given x/y position relative to the code window
@@ -524,9 +554,11 @@ export default class CodeArea extends HTMLElement{
 
     // execute an editor command
     exec(command){
-        if(command.delete?.length){ this.deleteRanges(command.delete); }
-        if(command.insert?.length){ this.insert(command.insert); }
-        if(command.ranges){ this.setSelectionRanges(command.ranges); }
+        let newRanges = command.ranges ? SelectionRange.mergeAndSortRanges(command.ranges) : null;
+
+        if(command.delete?.length){ newRanges = this.deleteRanges(command.delete, newRanges||this.ranges); }
+        if(command.insert?.length){ this.insert(command.insert, newRanges||this.ranges); }
+        if(newRanges){ this.setSortedSelectionRanges(newRanges); }
         return true;
     };
 

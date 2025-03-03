@@ -25,7 +25,11 @@ import {
     selectDocEnd,
     selectAll,
     deleteSelectionForward,
+    deleteWordForward,
+    deleteSubwordForward,
     deleteSelectionBackwards,
+    deleteWordBackwards,
+    deleteSubwordBackwards,
     addCursorUp,
     addCursorDown,
     addCursorOnSelection,
@@ -38,22 +42,24 @@ import {
 export default {
     'Escape': removeExtraCursors,
     'Ctrl+KeyA': selectAll,
+    // 'Ctrl+KeyX': cutSelection,
+    // 'Ctrl+KeyC': copySelection,
+    // 'Ctrl+KeyV': paste,
 
     // 'Ctrl+KeyZ': undo,
     // 'Ctrl+Shift+KeyZ': redo,
 
     // 'Space': insertCharacter(' '),
 
-    // 'Backspace': deleteCharBackward,
-    // 'Ctrl+Backspace': deleteGroupBackward,
-    // 'Alt+Backspace': deleteSubwordBackward,
+    'Backspace': deleteSelectionBackwards,
+    'Ctrl+Backspace': deleteWordBackwards,
+    'Alt+Backspace': deleteSubwordBackwards,
 
     'Delete': deleteSelectionForward,
-    // 'Ctrl+Delete': deleteGroupForward,
-    // 'Alt+Delete': deleteSubwordForward,
-    'Backspace': deleteSelectionBackwards,
+    'Ctrl+Delete': deleteWordForward,
+    'Alt+Delete': deleteSubwordForward,
 
-    // 'Enter': insertNewline,
+    // 'Enter': insertCharacter('\n'),
     // 'Ctrl+Enter': insertBlankLine,
     // 'Ctrl+Shift+Enter': insertNewline,
 

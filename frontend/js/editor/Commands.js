@@ -146,11 +146,6 @@ export const getWordBoundsAtPosition = (editor, position) => {
     return {start, end};
 };
 
-// returns a new position that is 'charDelta' characters away from 'position'
-export const getPositionFrom = (editor, position, charDelta) => {
-
-};
-
 export const deleteSelectionForward = editor => {
     const deleteRanges = editor.ranges.map(range => {
         if(!range.isEmpty){ return range; }
@@ -163,22 +158,64 @@ export const deleteSelectionForward = editor => {
     });
 };
 
+export const deleteWordForward = editor => {
+    const deleteRanges = editor.ranges.map(range => {
+        if(!range.isEmpty){ return range; }
+        return editor.range(range.start, getWordPositionRight(editor, range.end));
+    });
+
+    return editor.exec({
+        delete: deleteRanges,
+        ranges: editor.ranges.map(range => editor.range(range.tail))
+    });
+};
+
+export const deleteSubwordForward = editor => {
+    const deleteRanges = editor.ranges.map(range => {
+        if(!range.isEmpty){ return range; }
+        return editor.range(range.start, getSubwordPositionRight(editor, range.end));
+    });
+
+    return editor.exec({
+        delete: deleteRanges,
+        ranges: editor.ranges.map(range => editor.range(range.tail))
+    });
+};
+
 export const deleteSelectionBackwards = editor => {
-//     const normalizedRanges = editor.ranges.map(range => range.normal());
+    const deleteRanges = editor.ranges.map(range => {
+        if(!range.isEmpty){ return range; }
+        return editor.range(range.start, getCharPositionLeft(editor, range.end));
+    });
 
-//     const deleteRanges = normalizedRanges.map(range => {
-//         if(!range.empty){ return range; }
-//         return editor.range(getCharPositionLeft(editor, range.head), range.tail);
-//     });
+    return editor.exec({
+        delete: deleteRanges,
+        ranges: editor.ranges.map(range => editor.range(range.tail))
+    });
+};
 
-//     // const selectionRanges = normalizedRanges.map(range => {
-//     //     if(range.empty){ return editor.range(); }
-//     // });
+export const deleteWordBackwards = editor => {
+    const deleteRanges = editor.ranges.map(range => {
+        if(!range.isEmpty){ return range; }
+        return editor.range(range.start, getWordPositionLeft(editor, range.end));
+    });
 
-//     return editor.exec({
-//         delete: deleteRanges,
-//         // ranges: deleteRanges.map(range => editor.range(getCharPositionLeft(editor, range.tail)))
-//     });
+    return editor.exec({
+        delete: deleteRanges,
+        ranges: editor.ranges.map(range => editor.range(range.tail))
+    });
+};
+
+export const deleteSubwordBackwards = editor => {
+    const deleteRanges = editor.ranges.map(range => {
+        if(!range.isEmpty){ return range; }
+        return editor.range(range.start, getSubwordPositionLeft(editor, range.end));
+    });
+
+    return editor.exec({
+        delete: deleteRanges,
+        ranges: editor.ranges.map(range => editor.range(range.tail))
+    });
 };
 
 export const insertCharacter = character => editor => {
@@ -375,7 +412,7 @@ export const addCursorOnSelection = editor => {
 
 export const removeExtraCursors = editor => {
     const ranges = editor.ranges;
-    if(ranges.length <= 1 && ranges[0].isEmpty()){ return false; }
+    if(ranges.length <= 1 && ranges[0].isEmpty){ return false; }
 
     return editor.exec({
         ranges: [editor.range(editor.ranges[0].head)]

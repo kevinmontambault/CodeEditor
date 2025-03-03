@@ -151,7 +151,7 @@ export default class CodeLine extends HTMLElement{
         this.grammarState = null;
 
         this.positionValid = true;
-        this.position = previousLine ? previousLine.getDocPosition()+previousLine.length : 0;
+        this.position = previousLine ? previousLine.getDocPosition()+previousLine.length+1 : 0;
 
         this.setText(codeText);
     };
@@ -229,7 +229,7 @@ export default class CodeLine extends HTMLElement{
     getDocPosition(){
         if(this.positionValid){ return this.position; }
 
-        this.position = previousLine ? previousLine.getDocPosition()+previousLine.length : 0;
+        this.position = this.prevLine ? this.prevLine.getDocPosition()+this.prevLine.length+1 : 0;
         this.positionValid = true;
         return this.position;
     };
