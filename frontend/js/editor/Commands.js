@@ -148,6 +148,13 @@ export const getWordBoundsAtPosition = (editor, position) => {
     return {start, end};
 };
 
+export const deleteSelection = editor => {
+    return editor.exec({
+        delete: editor.ranges,
+        ranges: editor.ranges.map(range => editor.range(range.tail))
+    });
+};
+
 export const deleteSelectionForward = editor => {
     const deleteRanges = editor.ranges.map(range => {
         if(!range.isEmpty){ return range; }
@@ -220,16 +227,17 @@ export const deleteSubwordBackwards = editor => {
     });
 };
 
-export const insertCharacter = character => editor => {
-    // return editor.exec({
-    //     delete: 0,
-    //     insert: editor.ranges.map(range => ({line:range.head.line, col:range.head.col, string:character})),
-    //     ranges: editor.ranges.map(range => {
-    //         editor.range({line:range.head.line-1, });
-    //     })
-    // });
+export const insertText = (editor, text) => {
+    const lines = text.split('\n');
+    const insertionRanges = lines.length===editor.ranges.length ? editor.ranges.map((range, i) => [range.head, lines[i]]) : editor.ranges.map(range => [range.head, text]);
 
-    return true;
+    return editor.exec({
+        insert: insertionRanges,
+    });
+};
+
+export const overwriteText = (editor, text) => {
+    return deleteSelection(editor) && insertText(editor, text);
 };
 
 export const cursorMoveUp = editor => {
@@ -266,9 +274,14 @@ export const cursorSubwordLeft = editor => {
 };
 
 export const cursorLineLeft = editor => {
-    return editor.exec({
-        ranges: editor.ranges.map(range => editor.range(editor.position(range.head.line, 0)))
+    const ranges = editor.ranges.map(range => {
+        const lineIndex = range.head.line;
+        const firstNonWhitspace = editor.lines[lineIndex].text.search(/[^\s]/);
+        if(firstNonWhitspace === -1 || firstNonWhitspace===range.head.col){ return editor.range(editor.position(range.head.line, 0)); }
+        return editor.range(editor.position(range.head.line, firstNonWhitspace));
     });
+
+    return editor.exec({ranges});
 };
 
 export const cursorDocStart = editor => {
@@ -430,7 +443,15 @@ export const fontSizeDown = editor => {
 };
 
 export const copySelection = editor => {
+    const copyRanges = editor.ranges.map(range => {
+        if(!range.isEmpty){ return range; }
+        else if(range.start.line === editor.lines.length-1){ editor.range(editor.position(range.start.line, 0), editor.position(range.start.line, editor.lines[range.start.line].length)); }
+        else{ return editor.range(editor.position(range.start.line, 0), editor.position(range.start.line+1, 0)); }
+    });
 
+    editor.clipboard = copyRanges.map(range => range.text).join('\n');
+
+    return true;
 };
 
 export const cutSelection = editor => {
@@ -449,7 +470,7 @@ export const cutSelection = editor => {
 };
 
 export const paste = editor => {
-
+    return overwriteText(editor, editor.clipboard);
 };
 
 export const undo = editor => {

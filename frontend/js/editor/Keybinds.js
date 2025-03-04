@@ -103,9 +103,10 @@ export default {
     'Ctrl+Minus': fontSizeDown,
     
     'Ctrl+KeyA': selectAll,
+    'Ctrl+KeyS': save,
     'Ctrl+KeyX': cutSelection,
-    // 'Ctrl+KeyC': copySelection,
-    // 'Ctrl+KeyV': paste,
+    'Ctrl+KeyC': copySelection,
+    'Ctrl+KeyV': paste,
 
     // 'Ctrl+KeyZ': undo,
     'Ctrl+Shift+KeyZ': redo,

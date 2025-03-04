@@ -6,7 +6,7 @@ import Position       from './Position.js';
 import CodeLine       from './CodeLine.js';
 import Keybinds       from './Keybinds.js';
 
-import {insertCharacter, getWordBoundsAtPosition} from './Commands.js';
+import {overwriteText, getWordBoundsAtPosition} from './Commands.js';
 
 AddStyle(/*css*/`
     .code-area{
@@ -191,7 +191,7 @@ export default class CodeArea extends HTMLElement{
         this._keybinds = Keybinds;
         this.actionPointer = 0;
         this.actionStack = [];
-        this.deltaStack = [];
+        this._deltaStack = [];
         this.ranges = [];
         this.clipboard = '';
         
@@ -323,7 +323,7 @@ export default class CodeArea extends HTMLElement{
             const shortcutCode = keyString.join('+');
 
             if(this._keybinds[shortcutCode]?.(this)){ return downEvent.preventDefault(); }
-            if(keyString.length === 1 && insertCharacter(downEvent.key)(this)){ return downEvent.preventDefault(); }
+            if(keyString.length === 1 && overwriteText(this, downEvent.key)){ return downEvent.preventDefault(); }
 
             console.log(shortcutCode)
         });
@@ -439,8 +439,24 @@ export default class CodeArea extends HTMLElement{
         return SelectionRange.mergeSortedRanges(shiftSelections);
     };
 
-    insertText(textRanges, shiftSelections){
+    insertText(insertions, shiftSelections){
+        insertions.sort((a, b) => Position.lessThan(a[0], b[0]) ? -1 : 1).reverse();
 
+        // stash old selection starts before the document is invalidated
+        const oldSelectionStartPositions = shiftSelections.map(selection => selection.start.getDocPosition());
+
+        for(const [position, text] of insertions){
+            const lines = text.split('\n');
+
+            if(lines.length === 1){
+                const line = this.lines[position.line];
+                // line.text = ;
+            }else{
+
+            }
+        }
+
+        return SelectionRange.mergeSortedRanges(shiftSelections);
     };
 
     // Inserts multiple rows at a given index
@@ -575,20 +591,24 @@ export default class CodeArea extends HTMLElement{
     };
 
     async save(){
-        const updateResponse = await Remote.update(this.filePath, this.deltas);
+        const updateResponse = await Remote.updateFile(this.filePath, this.deltas);
         if(!updateResponse.success){ return console.error(updateResponse); } // TODO: notify
 
-        this.deltaStack = [];
+        this._deltaStack = [];
 
         this.dispatchEvent(new Event('save'));
     };
 
     // execute an editor command
     exec(command){
+        if(command.delete?.length && command.insert?.length){ throw new Error('Command contains both delete and insert'); }
+        command.timestamp = Date.now();
+
         let newRanges = command.ranges ? SelectionRange.mergeAndSortRanges(command.ranges) : null;
 
         if(command.delete?.length){ newRanges = this.deleteRanges(command.delete, newRanges||this.ranges); }
-        if(command.insert?.length){ this.insert(command.insert, newRanges||this.ranges); }
+        else if(command.insert?.length){ this.insertText(command.insert, newRanges||this.ranges); }
+
         if(newRanges){ this.setSortedSelectionRanges(newRanges); }
 
         if(command.delete?.length || command.insert?.length){
@@ -601,7 +621,7 @@ export default class CodeArea extends HTMLElement{
             }
             this.actionPointer += 1;
 
-            this.deltaStack.push(command);
+            this._deltaStack.push(command);
             this.dispatchEvent(new Event('edit'));
         }
 
@@ -627,8 +647,9 @@ export default class CodeArea extends HTMLElement{
     };
 
     get deltas(){
-        let i = this._actionStack.length - 1;
-        while(i && this._actionStack){  }
+        for(const delta of this._deltaStack){
+            console.log(delta)
+        }
     };
 
     get lines(){

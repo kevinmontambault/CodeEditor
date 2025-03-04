@@ -73,7 +73,14 @@ app.post('/file', encryptMiddleware, async (req, res) => {
 
 // update a file's contents
 app.post('/update', encryptMiddleware, (req, res) => {
+    const [path, ...deltas] = req.body.split('\0');
 
+    const fullPath = validatePath(path);
+    if(!fullPath){ return res.status(403).end(); }
+
+    console.log(deltas);
+    
+    res.status(500).end();
 });
 
 // shell connection

@@ -49,7 +49,7 @@ export default new class Remote{
         return await this.sendRequest('/file', path);
     };
     
-    async updateFile(){
-        return await this.sendRequest('/', `U${''}`);
+    async updateFile(path, deltas){
+        return await this.sendRequest('/update', `${path}\0${deltas.join('\0')}`);
     };
 };
