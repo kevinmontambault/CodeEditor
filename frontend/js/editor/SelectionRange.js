@@ -86,6 +86,14 @@ class LineRange{
         return this._editor.lines[this.line];
     };
 
+    toJSON(){
+        return JSON.stringify({line:this.line, start:this.start, end:this.end});
+    };
+
+    toString(){
+        return `${this.line}:${this.start}->${this.end}`;
+    };
+
     get isFullLine(){
         return !this.start && this.getLine().length === this.end;
     };
@@ -106,8 +114,10 @@ export default class SelectionRange{
                 Position.equals(kept[i].start, kept[i-1].start) ||
                 Position.equals(kept[i].end, kept[i-1].end)
             ){
-                if(kept[i]._rightFacing){ kept[i-1].update(null, kept[i].end); }
-                else{ kept[i-1].update(kept[i].end, kept[i-1].start); }
+                if(Position.greaterThan(kept[i].end, kept[i-1].end)){
+                    if(kept[i]._rightFacing){ kept[i-1].update(null, kept[i].end); }
+                    else{ kept[i-1].update(kept[i].end, kept[i-1].start); }
+                }
                 
                 kept.splice(i, 1);
             }

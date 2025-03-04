@@ -1,5 +1,5 @@
 import AddStyle from '../../__common__/Style.js';
-import Drive from '../../__common__/Drive.js';
+import Remote from '../../__common__/Remote.js';
 import CodeEditor from '../../editor/CodeEditor.js';
 
 class FileEntry extends HTMLElement{
@@ -94,7 +94,7 @@ class FolderEntry extends HTMLElement{
 
         if(!this.content){
             dirents.classList.add('loading');
-            const response = await Drive.readFolder(this.fullPath);
+            const response = await Remote.readFolder(this.fullPath);
             dirents.classList.remove('loading');
 
             if(!response.success){ return console.error(response.error); }

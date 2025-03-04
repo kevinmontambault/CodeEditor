@@ -1,4 +1,5 @@
 import AddStyle from '../__common__/Style.js';
+import Remote from '../__common__/Remote.js';
 
 import SelectionRange from './SelectionRange.js';
 import Position       from './Position.js';
@@ -145,7 +146,7 @@ function reload(table, forceReloadRows=false){
 };
 
 export default class CodeArea extends HTMLElement{
-    constructor(){
+    constructor(fileName, filePath){
         super();
 
         this.classList.add('code-area');
@@ -162,6 +163,9 @@ export default class CodeArea extends HTMLElement{
                 </div>
             </div>
         `;
+
+        this.fileName = fileName;
+        this.filePath = filePath;
 
         this._lineNumberGutterWidth = 0;
         this._fontFamily = null;
@@ -183,9 +187,13 @@ export default class CodeArea extends HTMLElement{
         this._indexesValid = true;
         this._queuedReload = null;
         this._forceReloadRows = false;
-
+        
         this._keybinds = Keybinds;
+        this.actionPointer = 0;
+        this.actionStack = [];
+        this.deltaStack = [];
         this.ranges = [];
+        this.clipboard = '';
         
         // scrolling with wheel
         this.addEventListener('wheel', e => this.scrollTo(this._queuedState.scrollTarget+e.deltaY));
@@ -273,25 +281,36 @@ export default class CodeArea extends HTMLElement{
         this.addEventListener('pointerdown', downEvent => {
             const downPosition = this.getPositionAt(downEvent.offsetX, downEvent.offsetY);
 
-            // if you pointerdown on a selected area, ignore it?
-            console.log(downEvent)
-
+            // nothing was clicked
             const selectedLine = this._lines[downPosition.line];
             if(!selectedLine){ return; }
-            
-            const newPosition = this.range(this.position(downPosition.line, Math.min(downPosition.col, selectedLine.length)));
-            const ranges = downEvent.ctrlKey ? [...this.ranges, newPosition] : [newPosition];
 
-            const moveCallback = moveEvent => {
-                const movePosition = this.getPositionAt(moveEvent.offsetX, moveEvent.offsetY);
-                newPosition.head = movePosition;
+            // a range was highlighted, so listen for dragging the range
+            const clickedRange = this.getRangeAt(downPosition);
+            if(clickedRange){
+                window.addEventListener('pointerup', () => {
+                    const newPosition = this.range(this.position(downPosition.line, Math.min(downPosition.col, selectedLine.length)));
+                    const ranges = downEvent.ctrlKey ? [...this.ranges.filter(range => range!==clickedRange), newPosition] : [newPosition];
+                    this.setSelectionRanges(ranges);
+                }, {once:true});
+            }
+
+            // no range was selected, so just listen for highlighting
+            else{
+                const newPosition = this.range(this.position(downPosition.line, Math.min(downPosition.col, selectedLine.length)));
+                const ranges = downEvent.ctrlKey ? [...this.ranges, newPosition] : [newPosition];
+    
+                const moveCallback = moveEvent => {
+                    const movePosition = this.getPositionAt(moveEvent.offsetX, moveEvent.offsetY);
+                    newPosition.head = movePosition;
+                    this.setSelectionRanges(ranges);
+                };
+    
+                window.addEventListener('pointermove', moveCallback);
+                window.addEventListener('pointerup', () => window.removeEventListener('pointermove', moveCallback), {once:true});
+
                 this.setSelectionRanges(ranges);
-            };
-
-            window.addEventListener('pointermove', moveCallback);
-            window.addEventListener('pointerup', () => window.removeEventListener('pointermove', moveCallback), {once:true});
-
-            this.setSelectionRanges(ranges);
+            }
         });
 
         // keyboard presses
@@ -304,7 +323,7 @@ export default class CodeArea extends HTMLElement{
             const shortcutCode = keyString.join('+');
 
             if(this._keybinds[shortcutCode]?.(this)){ return downEvent.preventDefault(); }
-            if(downEvent.key.length === 1 && insertCharacter(downEvent.key)(this)){ return downEvent.preventDefault(); }
+            if(keyString.length === 1 && insertCharacter(downEvent.key)(this)){ return downEvent.preventDefault(); }
 
             console.log(shortcutCode)
         });
@@ -517,8 +536,6 @@ export default class CodeArea extends HTMLElement{
             }
         }
 
-        console.log(ranges.map(r => r.start.getDocPosition()))
-    
         for(const range of ranges){ range.render(); }
         this.ranges = ranges;
     };
@@ -530,6 +547,11 @@ export default class CodeArea extends HTMLElement{
     // returns the line and column number of a given x/y position relative to the code window
     getPositionAt(x, y){
         return this.position(Math.floor((y + this._renderedState.scrollPosition) / this._lineHeight), Math.floor((x - this._lineNumberGutterWidth) / this._fontWidth));
+    };
+
+    // returns a range that intersects the provided position
+    getRangeAt(position){
+        return this.ranges.find(range => range.contains(position));
     };
 
     // scrolls to a position on the table
@@ -552,6 +574,15 @@ export default class CodeArea extends HTMLElement{
         }
     };
 
+    async save(){
+        const updateResponse = await Remote.update(this.filePath, this.deltas);
+        if(!updateResponse.success){ return console.error(updateResponse); } // TODO: notify
+
+        this.deltaStack = [];
+
+        this.dispatchEvent(new Event('save'));
+    };
+
     // execute an editor command
     exec(command){
         let newRanges = command.ranges ? SelectionRange.mergeAndSortRanges(command.ranges) : null;
@@ -559,6 +590,21 @@ export default class CodeArea extends HTMLElement{
         if(command.delete?.length){ newRanges = this.deleteRanges(command.delete, newRanges||this.ranges); }
         if(command.insert?.length){ this.insert(command.insert, newRanges||this.ranges); }
         if(newRanges){ this.setSortedSelectionRanges(newRanges); }
+
+        if(command.delete?.length || command.insert?.length){
+            if(this.actionPointer !== this.actionStack.length){
+                if(this.actionStack[this.actionPointer] !== command){
+                    this.actionStack.splice(this.actionPointer, this.actionStack.length-this.actionPointer);
+                }
+            }else{
+                this.actionStack.push(command);
+            }
+            this.actionPointer += 1;
+
+            this.deltaStack.push(command);
+            this.dispatchEvent(new Event('edit'));
+        }
+
         return true;
     };
 
@@ -578,6 +624,11 @@ export default class CodeArea extends HTMLElement{
 
     get text(){
         return this._lines.map(line => line.text).join('\n');
+    };
+
+    get deltas(){
+        let i = this._actionStack.length - 1;
+        while(i && this._actionStack){  }
     };
 
     get lines(){

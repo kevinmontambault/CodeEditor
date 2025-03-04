@@ -78,6 +78,14 @@ export default class EditorTab extends HTMLElement{
         this.name = name;
         this.context = editorContext;
 
+        this.context.addEventListener('edit', () => {
+
+        });
+
+        this.context.addEventListener('save', () => {
+
+        });
+
         this.active = true;
     };
 

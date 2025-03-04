@@ -1,5 +1,5 @@
 import AddStyle from '../__common__/Style.js';
-import Drive    from '../__common__/Drive.js';
+import Remote   from '../__common__/Remote.js';
 
 import EditorTab from './EditorTab.js';
 import CodeArea from './CodeArea.js';
@@ -62,12 +62,15 @@ export class CodeEditor extends HTMLElement{
         // create a new tab and editor context
         const context = new CodeArea(fileName, filePath);
 
+        // update local file content cache when saved
+        context.addEventListener('save', () => this.fileContentCache.set(filePath, context.text));
+
         if(this.fileContentCache.has(filePath)){
             context.setText(this.fileContentCache.get(filePath));
         }else{
             (async () => {
                 context.classList.add('loading');
-                const response = await Drive.readFile(filePath);
+                const response = await Remote.readFile(filePath);
                 context.classList.remove('loading');
     
                 if(response.success){

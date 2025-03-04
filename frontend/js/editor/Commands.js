@@ -11,17 +11,19 @@ const getCharPositionDown = (editor, position) => {
 };
 
 const getCharPositionLeft = (editor, position) => {
-    if(position.col <= 0){
+    const effectiveColumn = Math.min(editor.lines[position.line].length, position.col);
+    if(effectiveColumn <= 0){
         if(position.line === 0){ return editor.position(0, 0); }
         else{ return editor.position(position.line-1, editor.lines[position.line-1].length); }
-    }else{ return editor.position(position.line, Math.min(editor.lines[position.line].length, position.col)-1); }
+    }else{ return editor.position(position.line, effectiveColumn-1); }
 };
 
 const getCharPositionRight = (editor, position) => {
-    if(position.col >= editor.lines[position.line].length){
-        if(position.line === editor.lines.length-1){ return editor.position(position.line, position.col); }
+    const effectiveColumn = Math.min(editor.lines[position.line].length, position.col);
+    if(effectiveColumn >= editor.lines[position.line].length){
+        if(position.line === editor.lines.length-1){ return editor.position(position.line, effectiveColumn); }
         else{ return editor.position(position.line+1, 0); }
-    }else{ return editor.position(position.line, Math.min(editor.lines[position.line].length, position.col)+1); }
+    }else{ return editor.position(position.line, effectiveColumn+1); }
 };
 
 const getWordPositionLeft = (editor, position) => {
@@ -439,30 +441,15 @@ export const paste = editor => {
 
 };
 
-// const deleteSubwordForward = view => {
-//     if(!selectSubwordForward(view)){ return false; }
+export const undo = editor => {
+    editor.deltaStack.pop();
+};
 
-//     const changes = view.state.selection.ranges;
-//     if(!changes.length){ return false; }
-    
-//     view.dispatch({
-//         changes,
-//         scrollIntoView: true
-//     });
+export const redo = editor => {
+    return editor.exec(editor.actionStack[editor.actionPointer]);
+};
 
-//     return true;
-// };
-
-// const deleteSubwordBackward = view => {
-//     if(!selectSubwordBackward(view)){ return false; }
-
-//     const changes = view.state.selection.ranges;
-//     if(!changes.length){ return false; }
-    
-//     view.dispatch({
-//         changes,
-//         scrollIntoView: true
-//     });
-
-//     return true;
-// };
+export const save = editor => {
+    editor.save();
+    return true;
+};

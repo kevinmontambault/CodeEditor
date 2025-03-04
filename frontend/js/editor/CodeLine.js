@@ -73,50 +73,6 @@ function hastToHTML(hast){
     })(hast.children[0].children[0].children[0].children);
 };
 
-// export class CodeArea extends QuickTable{
-//     constructor(){
-//         super();
-
-//         this.renderLine = null;
-//         this.renderQueue = null;
-
-//         this.addEventListener('reload', ({state}) => {
-
-
-//             console.log(state.rowEnd);
-//         });
-//     };
-
-//     insert(text, index=-1){
-//         if(index < 0){ index = this._lines.length + index + 1; }
-//         this.insertRow(new CodeLine(text, this.getRow(index-1)));
-//     };
-
-//     remove(startIndex, endIndex){
-//         if(endIndex < 1){ endIndex = this._lines.length + index + 1; }
-
-//         for(const row of this._lines.slice(startIndex, endIndex)){ delete row.parentArea; }
-//         this._lines.splice(startIndex, endIndex-startIndex);
-
-//         const prevRow = this._lines[startIndex-1] || null;
-//         const nextRow = this._lines[endIndex]   || null;
-        
-//         if(prevRow){ prevRow.nextLine = nextRow; }
-//         if(nextRow){
-//             nextRow.prevLine = prevRow;
-//             nextRow.invalidateState();
-//         }
-
-//         this._indexesValid = false;
-//         this.reload();
-//     };
-
-//     move(indexFrom, indexTo){
-
-//     };
-// };
-// customElements.define('code-area', CodeArea);
-
 export default class CodeLine extends HTMLElement{
     static tabWidth = 3;
 
