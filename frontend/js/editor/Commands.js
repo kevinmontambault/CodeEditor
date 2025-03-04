@@ -429,12 +429,23 @@ export const fontSizeDown = editor => {
     return editor.changeFontSize(-1);
 };
 
-export const copy = editor => {
+export const copySelection = editor => {
 
 };
 
-export const cut = editor => {
+export const cutSelection = editor => {
+    const deleteRanges = editor.ranges.map(range => {
+        if(!range.isEmpty){ return range; }
+        else if(range.start.line === editor.lines.length-1){ editor.range(editor.position(range.start.line, 0), editor.position(range.start.line, editor.lines[range.start.line].length)); }
+        else{ return editor.range(editor.position(range.start.line, 0), editor.position(range.start.line+1, 0)); }
+    });
 
+    editor.clipboard = deleteRanges.map(range => range.text).join('\n');
+    
+    return editor.exec({
+        delete: deleteRanges,
+        ranges: deleteRanges.map(range => editor.range(range.tail))
+    });
 };
 
 export const paste = editor => {

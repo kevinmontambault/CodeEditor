@@ -35,22 +35,17 @@ import {
     addCursorOnSelection,
     removeExtraCursors,
     fontSizeUp,
-    fontSizeDown
+    fontSizeDown,
+    undo,
+    redo,
+    copySelection,
+    cutSelection,
+    paste,
+    save
 } from './Commands.js';
 
 // standard key presses
 export default {
-    'Escape': removeExtraCursors,
-    'Ctrl+KeyA': selectAll,
-    // 'Ctrl+KeyX': cutSelection,
-    // 'Ctrl+KeyC': copySelection,
-    // 'Ctrl+KeyV': paste,
-
-    // 'Ctrl+KeyZ': undo,
-    // 'Ctrl+Shift+KeyZ': redo,
-
-    // 'Space': insertCharacter(' '),
-
     'Backspace': deleteSelectionBackwards,
     'Ctrl+Backspace': deleteWordBackwards,
     'Alt+Backspace': deleteSubwordBackwards,
@@ -101,10 +96,19 @@ export default {
     // 'Ctrl+BracketLeft': indentLess,
     // 'Tab': insertTab,
     // 'Shift+Tab': indentLess,
-
+    'Ctrl+Shift+KeyL': addCursorOnSelection,
+    'Escape': removeExtraCursors,
 
     'Ctrl+Equal': fontSizeUp,
     'Ctrl+Minus': fontSizeDown,
+    
+    'Ctrl+KeyA': selectAll,
+    'Ctrl+KeyX': cutSelection,
+    // 'Ctrl+KeyC': copySelection,
+    // 'Ctrl+KeyV': paste,
 
-    'Ctrl+Shift+KeyL': addCursorOnSelection,
+    // 'Ctrl+KeyZ': undo,
+    'Ctrl+Shift+KeyZ': redo,
+
+    // 'Space': insertCharacter(' '),
 };

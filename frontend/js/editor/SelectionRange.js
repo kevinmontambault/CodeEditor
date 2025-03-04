@@ -97,6 +97,10 @@ class LineRange{
     get isFullLine(){
         return !this.start && this.getLine().length === this.end;
     };
+
+    get text(){
+        return this.getLine().text.slice(this.start, this.end);
+    };
 };
 
 export default class SelectionRange{
@@ -266,5 +270,9 @@ export default class SelectionRange{
         if(this._rightFacing){ this.update(position, null); }
         else{ this.update(null, position); }
         return position;
+    };
+
+    get text(){
+        return this.getPerLineSelectionRanges().map(range => range.text).join('\n');
     };
 };
