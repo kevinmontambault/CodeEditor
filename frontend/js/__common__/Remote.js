@@ -1,4 +1,4 @@
-import forge from 'http://localhost:3000/npm/node-forge@1.3.1/+esm';
+import forge from 'https://cdn.jsdelivr.net/npm/node-forge@1.3.1/+esm';
 
 function byteStringToUint8Array(byteString) {
     const bytes = new Uint8Array(byteString.length);
@@ -42,15 +42,23 @@ export default new class Remote{
     };
 
     async readFolder(path){
-        return await this.sendRequest('/folder', path);
+        return await this.sendRequest('/r/folder', path);
+    };
+
+    async createFile(path){
+        return await this.sendRequest('/c/file', path);
     };
     
     async readFile(path){
-        return await this.sendRequest('/file', path);
+        return await this.sendRequest('/r/file', path);
     };
     
     async updateFile(path, deltas){
         if(!deltas.length){ return {success:true}; }
-        return await this.sendRequest('/update', `${path}\0${deltas.join('\0')}`);
+        return await this.sendRequest('/u/file', `${path}\0${deltas.join('\0')}`);
+    };
+
+    async deleteFile(path){
+        return await this.sendRequest('/d/file', path);
     };
 };
