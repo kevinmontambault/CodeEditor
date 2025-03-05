@@ -323,7 +323,7 @@ export default class CodeArea extends HTMLElement{
             const shortcutCode = keyString.join('+');
 
             if(this._keybinds[shortcutCode]?.(this)){ return downEvent.preventDefault(); }
-            if(keyString.length === 1 && overwriteText(this, downEvent.key)){ return downEvent.preventDefault(); }
+            if(keyString.length === 1 && downEvent.key.length===1 && overwriteText(this, downEvent.key)){ return downEvent.preventDefault(); }
 
             console.log(shortcutCode)
         });

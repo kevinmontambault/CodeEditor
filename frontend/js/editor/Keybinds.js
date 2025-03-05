@@ -113,4 +113,10 @@ export default {
 
     // 'Ctrl+KeyZ': undo,
     'Ctrl+Shift+KeyZ': redo,
+
+    // keyboard specific binds
+    'Save': save,
+    'Copy': copySelection,
+    'Cut': cutSelection,
+    'Paste': paste,
 };
