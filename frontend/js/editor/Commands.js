@@ -139,10 +139,10 @@ const deleteSelection = editor => {
 
 const insertText = (editor, text, enableSplit=true) => {
     const lines = enableSplit ? text.split('\n') : [text];
-    const insertionRanges = lines.length===editor.ranges.length ? editor.ranges.map((range, i) => [range.head, lines[i]]) : editor.ranges.map(range => [range.head, text]);
+    const insertPositions = lines.length===editor.ranges.length ? editor.ranges.map((range, i) => [range.head, lines[i]]) : editor.ranges.map(range => [range.head, text]);
 
     return editor.exec({
-        insert: insertionRanges,
+        insert: insertPositions
     });
 };
 
@@ -242,6 +242,24 @@ export const overwriteText = (editor, text) => {
 
 export const overwriteNewline = editor => {
     return deleteSelection(editor) && insertText(editor, '\n', false);
+};
+
+export const insertNewlineUp = editor => {
+    const insertPositions = editor.ranges.map(range => editor.position(range.head.line, 0));
+
+    return editor.exec({
+        insert: insertPositions.map(position => [position, '\n']),
+        ranges: insertPositions.map(position => editor.range(position))
+    }) && cursorMoveLeft(editor);
+};
+
+export const insertNewlineDown = editor => {
+    const insertPositions = editor.ranges.map(range => editor.position(range.head.line, editor.lines[range.head.line].length));
+
+    return editor.exec({
+        insert: insertPositions.map(position => [position, '\n']),
+        ranges: insertPositions.map(position => editor.range(position))
+    });
 };
 
 export const cursorMoveUp = editor => {

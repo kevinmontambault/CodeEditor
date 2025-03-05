@@ -36,8 +36,9 @@ import {
     removeExtraCursors,
     fontSizeUp,
     fontSizeDown,
-    overwriteText,
     overwriteNewline,
+    insertNewlineUp,
+    insertNewlineDown,
     undo,
     redo,
     copySelection,
@@ -57,8 +58,8 @@ export default {
     'Alt+Delete': deleteSubwordForward,
 
     'Enter': overwriteNewline,
-    // 'Ctrl+Enter': insertBlankLine,
-    // 'Ctrl+Shift+Enter': insertNewline,
+    'Ctrl+Enter': insertNewlineDown,
+    'Ctrl+Shift+Enter': insertNewlineUp,
 
     'ArrowLeft': cursorMoveLeft,
     'Ctrl+ArrowLeft': cursorWordLeft,
