@@ -275,4 +275,8 @@ export default class SelectionRange{
     get text(){
         return this.getPerLineSelectionRanges().map(range => range.text).join('\n');
     };
+
+    get length(){
+        return this.end.getDocPosition() - this.start.getDocPosition();
+    };
 };

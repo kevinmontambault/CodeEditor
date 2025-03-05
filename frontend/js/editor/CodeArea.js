@@ -613,8 +613,13 @@ export default class CodeArea extends HTMLElement{
 
         let newRanges = command.ranges ? SelectionRange.mergeAndSortRanges(command.ranges) : null;
 
-        if(command.delete?.length){ newRanges = this.deleteRanges(command.delete, newRanges||this.ranges); }
-        else if(command.insert?.length){ newRanges = this.insertText(command.insert, newRanges||this.ranges); }
+        if(command.delete?.length){
+            this._deltaStack.push({type:'d', ranges:command.delete.map(range => [range.start.getDocPosition(), range.length])});
+            newRanges = this.deleteRanges(command.delete, newRanges||this.ranges);
+        }else if(command.insert?.length){
+            this._deltaStack.push({type:'i', texts:command.insert.map(([position, text]) => [position.getDocPosition(), text])});
+            newRanges = this.insertText(command.insert, newRanges||this.ranges);
+        }
 
         if(newRanges){ this.setSortedSelectionRanges(newRanges); }
 
@@ -628,7 +633,6 @@ export default class CodeArea extends HTMLElement{
             }
             this.actionPointer += 1;
 
-            this._deltaStack.push(command);
             this.dispatchEvent(new Event('edit'));
         }
 
@@ -652,11 +656,29 @@ export default class CodeArea extends HTMLElement{
     get text(){
         return this._lines.map(line => line.text).join('\n');
     };
-
+    
     get deltas(){
+        const deltas = [];
         for(const delta of this._deltaStack){
-            console.log(delta)
+            if(delta.type === 'd'){
+                let offsetSum = 0;
+                for(const [position, length] of delta.ranges){
+                    if(!length){ continue; }
+                    deltas.push(`D${position-offsetSum},${length}`);
+                    offsetSum += length;
+                }
+            }
+            
+            else if(delta.type === 'i'){
+                let offsetSum = 0;
+                for(const [position, text] of delta.texts){
+                    deltas.push(`I${position+offsetSum},${text}`);
+                    offsetSum += text.length;
+                }
+            }
         }
+
+        return deltas;
     };
 
     get lines(){

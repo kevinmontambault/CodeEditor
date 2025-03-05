@@ -23,10 +23,6 @@ const aesKey  = keyContent.subarray(0,  32);
 const hmacKey = keyContent.subarray(32, 64);
 const encryptMiddleware = encrypt({aesKey, hmacKey});
 
-function encryptResponse(response){
-    return response;
-};
-
 function validatePath(filePath){
     const rootPath = path.normalize(config.root);
     const fullPath = path.normalize(path.join(rootPath, decodeURIComponent(filePath)));
@@ -72,15 +68,40 @@ app.post('/file', encryptMiddleware, async (req, res) => {
 });
 
 // update a file's contents
-app.post('/update', encryptMiddleware, (req, res) => {
-    const [path, ...deltas] = req.body.split('\0');
+app.post('/update', encryptMiddleware, async (req, res) => {
+    const [path, ...rawDeltas] = req.body.split('\0');
 
     const fullPath = validatePath(path);
     if(!fullPath){ return res.status(403).end(); }
 
-    console.log(deltas);
+    let fileContent;
+    try{ fileContent = await fs.promises.readFile(fullPath, 'utf-8'); }
+    catch(err){ return res.status(500).end(); }
+    fileContent = fileContent.replace(/\r/g, '');
+
+    // normalize
+    const deltas = rawDeltas.map(rawDelta => {
+        const type = rawDelta.slice(0, 1);
+        const [pos, ...rest] = rawDelta.slice(1).split(',');
+        return [type, parseInt(pos)+1, rest.join('')];
+    });
+
+    // apply deltas
+    for(let i=0; i<deltas.length; i++){
+        const [type, pos, arg] = deltas[i];
+
+        if(type === 'D'){
+            const length = parseInt(arg);
+            fileContent = `${fileContent.slice(0, pos-1)}${fileContent.slice(pos+length-1)}`;
+        }else if(type === 'I'){
+            fileContent = `${fileContent.slice(0, pos)}${arg}${fileContent.slice(pos)}`;
+        }
+    }
     
-    res.status(500).end();
+    try{ await fs.promises.writeFile(fullPath, fileContent); }
+    catch(err){ console.error(err); return res.status(500).end(); }
+    
+    res.status(200).end();
 });
 
 // shell connection

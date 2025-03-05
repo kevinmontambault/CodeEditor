@@ -50,6 +50,7 @@ export default new class Remote{
     };
     
     async updateFile(path, deltas){
+        if(!deltas.length){ return {success:true}; }
         return await this.sendRequest('/update', `${path}\0${deltas.join('\0')}`);
     };
 };
