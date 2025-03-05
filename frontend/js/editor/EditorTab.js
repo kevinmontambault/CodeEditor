@@ -117,6 +117,14 @@ export default class EditorTab extends HTMLElement{
         return true;
     };
 
+    get sessionInfo(){
+        return {
+            name: this.name,
+            path: this.path,
+            position: this.context.scrollPosition,
+        };
+    };
+
     set active(value){
         if(value){
             if(EditorTab.activeTab === this){ return true; }

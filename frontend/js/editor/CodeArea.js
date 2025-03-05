@@ -5,6 +5,7 @@ import SelectionRange from './SelectionRange.js';
 import Position       from './Position.js';
 import CodeLine       from './CodeLine.js';
 import Keybinds       from './Keybinds.js';
+import Clipboard      from './Clipboard.js';
 
 import {overwriteText, getWordBoundsAtPosition} from './Commands.js';
 
@@ -15,6 +16,17 @@ AddStyle(/*css*/`
         inset: 0;
         overflow: hidden;
         cursor: text;
+    }
+
+    .code-area .clipboard{
+        position: 'absolute';
+        left: 0;
+        top: 0;
+        border: 'none';
+        width: 0;
+        height: 0;
+        padding: 0;
+        margin: 0;
     }
 
     .code-area .table-container{
@@ -153,6 +165,8 @@ export default class CodeArea extends HTMLElement{
         this.toggleAttribute('focusable', true);
 
         this.innerHTML = /*html*/`
+            <textarea class="clipboard"></textarea>
+
             <div class="table-container">
                 <div class="row-window"></div>
             </div>
@@ -193,11 +207,10 @@ export default class CodeArea extends HTMLElement{
         this.actionStack = [];
         this._deltaStack = [];
         this.ranges = [];
-        this.clipboard = '';
         
         // scrolling with wheel
         this.addEventListener('wheel', e => this.scrollTo(this._queuedState.scrollTarget+e.deltaY));
-        
+
         // scrolling by dragging scroll bar
         const scrollHandleContainer = this.querySelector('.scroll-handle-container');
         this._scrollGutter.addEventListener('pointerdown', e => {
@@ -682,6 +695,10 @@ export default class CodeArea extends HTMLElement{
 
     get lines(){
         return this._lines;
+    };
+
+    get scrollPosition(){
+        return this._queuedState.scrollPosition;
     };
 };
 customElements.define('code-area', CodeArea);

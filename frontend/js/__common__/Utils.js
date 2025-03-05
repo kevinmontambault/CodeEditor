@@ -22,3 +22,9 @@ export async function sendRequest(...args){
 export function zPad(string, c=2){
     return string.toString().padStart(c, '0');
 };
+
+export function hash(){
+    let hash = 0;
+    for(let i=0, len=str.length; i<len; i++){ hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0; }
+    return hash;
+};

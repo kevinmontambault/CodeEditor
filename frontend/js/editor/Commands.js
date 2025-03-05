@@ -1,3 +1,4 @@
+import Clipboard from './Clipboard.js';
 import Position from './Position.js';
 
 const getCharPositionUp = (editor, position) => {
@@ -471,7 +472,7 @@ export const copySelection = editor => {
         else{ return editor.range(editor.position(range.start.line, 0), editor.position(range.start.line+1, 0)); }
     });
 
-    editor.clipboard = copyRanges.map(range => range.text).join('\n');
+    Clipboard.write(copyRanges.map(range => range.text).join('\n'));
 
     return true;
 };
@@ -483,7 +484,7 @@ export const cutSelection = editor => {
         else{ return editor.range(editor.position(range.start.line, 0), editor.position(range.start.line+1, 0)); }
     });
 
-    editor.clipboard = deleteRanges.map(range => range.text).join('\n');
+    Clipboard.write(deleteRanges.map(range => range.text).join('\n'));
     
     return editor.exec({
         delete: deleteRanges,
@@ -492,7 +493,8 @@ export const cutSelection = editor => {
 };
 
 export const paste = editor => {
-    return overwriteText(editor, editor.clipboard);
+    return overwriteText(editor, Clipboard.read());
+    return true;
 };
 
 export const undo = editor => {

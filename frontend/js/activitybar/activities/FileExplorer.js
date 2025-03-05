@@ -1,6 +1,8 @@
 import AddStyle from '../../__common__/Style.js';
 import Remote from '../../__common__/Remote.js';
 import CodeEditor from '../../editor/CodeEditor.js';
+import EditorTab from '../../editor/EditorTab.js';
+import * as Sessions from '../../__common__/Sessions.js';
 
 class FileEntry extends HTMLElement{
     constructor(name, fullPath){
@@ -154,17 +156,28 @@ export default class FileExplorer extends HTMLElement{
         `;
 
         this.root = null;
+
+        window.addEventListener('beforeunload', () => this.saveSession());
+        
         this.openFolder('Random/Node/CodeEditor');
     };
 
     // renders a root folder
-    openFolder(directory){
+    async openFolder(directory){
         if(this.root){ this.closeFolder(); }
 
         this.querySelector('.root-name').textContent = '';
         this.querySelector('.file-tree').appendChild(new FolderEntry(directory, directory, 0));
 
         this.root = directory;
+
+        const sessionInfo = Sessions.load(this.root);
+        console.log(sessionInfo)
+        if(sessionInfo){
+            for(const tab of sessionInfo.tabs){
+                (await CodeEditor).openFile(tab.name, tab.path);
+            }
+        }
     };
     
     closeFolder(){
@@ -176,6 +189,13 @@ export default class FileExplorer extends HTMLElement{
 
     reload(){
         
+    };
+
+    saveSession(){
+        Sessions.set(this.root, JSON.stringify({
+            // explorer: ,
+            tabs: EditorTab.tabs.map(tab => tab.sessionInfo)
+        }));
     };
 };
 customElements.define('file-explorer', FileExplorer);
