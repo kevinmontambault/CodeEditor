@@ -122,7 +122,7 @@ app.post('/u/file', encryptMiddleware, async (req, res) => {
     const deltas = rawDeltas.map(rawDelta => {
         const type = rawDelta.slice(0, 1);
         const [pos, ...rest] = rawDelta.slice(1).split(',');
-        return [type, parseInt(pos)+1, rest.join('')];
+        return [type, parseInt(pos), rest.join('')];
     });
 
     // apply deltas
@@ -131,7 +131,7 @@ app.post('/u/file', encryptMiddleware, async (req, res) => {
 
         if(type === 'D'){
             const length = parseInt(arg);
-            fileContent = `${fileContent.slice(0, pos-1)}${fileContent.slice(pos+length-1)}`;
+            fileContent = `${fileContent.slice(0, pos)}${fileContent.slice(pos+length)}`;
         }else if(type === 'I'){
             fileContent = `${fileContent.slice(0, pos)}${arg}${fileContent.slice(pos)}`;
         }

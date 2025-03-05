@@ -60,8 +60,9 @@ AddStyle(/*css*/`
     }
 `);
 
-const shiki = await createHighlighter({langs:['js'], themes:['monokai']});
-const shikiOptions = {lang:'js', theme:'monokai'};
+const theme = 'monokai';
+const shiki = await createHighlighter({langs:['js'], themes:[theme]});
+const shikiOptions = {lang:'js', theme};
 
 function escapeHtml(unsafe){
     return unsafe
