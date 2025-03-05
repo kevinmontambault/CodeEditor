@@ -323,12 +323,11 @@ export default class CodeArea extends HTMLElement{
             const shortcutCode = keyString.join('+');
 
             if(this._keybinds[shortcutCode]?.(this)){ return downEvent.preventDefault(); }
-            if(keyString.length === 1 && downEvent.key.length===1 && overwriteText(this, downEvent.key)){ return downEvent.preventDefault(); }
 
             console.log(shortcutCode)
         });
 
-        this.setFont("'Cascadia Mono', monospace", 14);
+        this.setFont("'Cascadia Mono', monospace", 8);
     };
 
     set lineHeight(height){
@@ -368,7 +367,7 @@ export default class CodeArea extends HTMLElement{
         updateGutterWidth(this);
         this.lineHeight = size * 1.2;
 
-        // this.select(this.ranges);
+        this.setSortedSelectionRanges(this.ranges);
         return true;
     };
 

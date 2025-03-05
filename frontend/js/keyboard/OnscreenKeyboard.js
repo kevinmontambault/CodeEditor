@@ -465,6 +465,8 @@ export default class OnscreenKeyboard extends HTMLElement{
         keyElement.classList.add('pressed');
         keyElement.pressedCount += 1;
 
+        navigator.vibrate(20);
+
         // a new key was pressed, so remove the old repeat timeout
         if(this.keyRepeatTimeout){
             clearTimeout(this.keyRepeatTimeout);
@@ -551,6 +553,8 @@ export default class OnscreenKeyboard extends HTMLElement{
     releaseKeyElement(keyElement){
         keyElement.classList.remove('pressed');
         keyElement.pressedCount -= 1;
+
+        navigator.vibrate(Array.from(new Array(20), () => 1));
 
         // key isn't actually fully released
         if(keyElement.pressedCount || keyElement.locked){ return; }
