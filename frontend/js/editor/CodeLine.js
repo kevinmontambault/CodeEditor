@@ -76,7 +76,7 @@ function hastToHTML(hast){
 export default class CodeLine extends HTMLElement{
     static tabWidth = 3;
 
-    constructor(codeText, previousLine=null){
+    constructor(codeText, previousLine=null, nextLine=null){
         super();
 
         this.classList.add('code-line', 'flex-row');
@@ -97,8 +97,12 @@ export default class CodeLine extends HTMLElement{
         this.whitespaceLayer = this.querySelector('.whitespace-layer');
 
         this.prevLine = previousLine;
-        this.nextLine = null;
+        this.nextLine = nextLine;
         if(previousLine){ previousLine.nextLine = this; }
+        if(nextLine){
+            nextLine.prevLine = this;
+            nextLine.invalidateState();
+        }
 
         this.text = '';
 
@@ -151,8 +155,6 @@ export default class CodeLine extends HTMLElement{
     };
 
     invalidateState(){
-        if(!this.rendered){ return; }
-
         this.rendered      = false;
         this.positionValid = false;
         this.grammarState  = null;

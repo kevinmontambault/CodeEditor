@@ -440,45 +440,52 @@ export default class CodeArea extends HTMLElement{
     };
 
     insertText(insertions, shiftSelections){
-        insertions.sort((a, b) => Position.lessThan(a[0], b[0]) ? -1 : 1).reverse();
+        insertions.sort((a, b) => Position.lessThan(a[0], b[0]) ? -1 : 1);
 
         // stash old selection starts before the document is invalidated
         const oldSelectionStartPositions = shiftSelections.map(selection => selection.start.getDocPosition());
 
-        for(const [position, text] of insertions){
-            const lines = text.split('\n');
+        // calculate new selection starts
+        let j = 0;
+        let positionDelta = 0;
+        const newSelectionStartPositions = shiftSelections.map((selection, i) => {
+            while(j<insertions.length && Position.greaterEqualThan(selection.start, insertions[j][0])){
+                positionDelta += insertions[j][1].length;
+                j += 1;
+            }
 
-            if(lines.length === 1){
-                const line = this.lines[position.line];
-                // line.text = ;
+            return oldSelectionStartPositions[i] + positionDelta;
+        });
+
+        for(const [position, text] of insertions.toReversed()){
+            const line = this.lines[position.line];
+
+            const textLines = text.split('\n');
+            if(textLines.length === 1){
+                line.setText(`${line.text.slice(0, position.col)}${text}${line.text.slice(position.col)}`);
             }else{
+                const oldText = line.text;
+                this.createRow(`${textLines[textLines.length-1]}${oldText.slice(position.col)}`, position.line+1);
+                for(const textLine of textLines.slice(1, -1).reverse()){ this.createRow(textLine, position.line+1); }
+                line.setText(`${oldText.slice(0, position.col)}${textLines[0]}`);
+            }
+        }
 
+        // update selection positions
+        for(const [i, selection] of shiftSelections.entries()){
+            if(oldSelectionStartPositions[i] !== newSelectionStartPositions[i]){
+                selection.setDocPosition(newSelectionStartPositions[i]);
             }
         }
 
         return SelectionRange.mergeSortedRanges(shiftSelections);
     };
 
-    // Inserts multiple rows at a given index
-    insertRows(newRows, index=-1){
+    // creates a single codeline and inserts it into the table
+    createRow(text, index=-1){
         if(index < 0){ index = this._lines.length + index + 1; }
-        for(const row of newRows){ adoptRow(this, row); }
 
-        if(index === this._lines.length){
-            for(let i=0; i<newRows.length; i++){ newRows[i].index = index + i; }
-            this._lines.push(...newRows);
-        }else{
-            this._indexesValid = false;
-            this._lines.splice(index, 0, ...newRows);
-        }
-
-        reload(this, true);
-    };
-
-    // Inserts a single row into the table
-    insertRow(newRow, index=-1){
-        if(newRow.parentArea){ newRow.parentArea.removeRow(newRow); }
-        if(index < 0){ index = this._lines.length + index + 1; }
+        const newRow = new CodeLine(text, this._lines[index-1]||null, this._lines[index]||null);
 
         if(index === this._lines.length){
             newRow.index = index;
@@ -607,7 +614,7 @@ export default class CodeArea extends HTMLElement{
         let newRanges = command.ranges ? SelectionRange.mergeAndSortRanges(command.ranges) : null;
 
         if(command.delete?.length){ newRanges = this.deleteRanges(command.delete, newRanges||this.ranges); }
-        else if(command.insert?.length){ this.insertText(command.insert, newRanges||this.ranges); }
+        else if(command.insert?.length){ newRanges = this.insertText(command.insert, newRanges||this.ranges); }
 
         if(newRanges){ this.setSortedSelectionRanges(newRanges); }
 

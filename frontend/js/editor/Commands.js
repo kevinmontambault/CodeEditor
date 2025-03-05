@@ -130,6 +130,22 @@ const getSubwordPositionRight = (editor, position) => {
     return editor.position(position.line, col);
 };
 
+const deleteSelection = editor => {
+    return editor.exec({
+        delete: editor.ranges,
+        ranges: editor.ranges.map(range => editor.range(range.tail))
+    });
+};
+
+const insertText = (editor, text, enableSplit=true) => {
+    const lines = enableSplit ? text.split('\n') : [text];
+    const insertionRanges = lines.length===editor.ranges.length ? editor.ranges.map((range, i) => [range.head, lines[i]]) : editor.ranges.map(range => [range.head, text]);
+
+    return editor.exec({
+        insert: insertionRanges,
+    });
+};
+
 export const getWordBoundsAtPosition = (editor, position) => {
     const line = editor.lines[position.line];
     if(!line){ return null; }
@@ -146,13 +162,6 @@ export const getWordBoundsAtPosition = (editor, position) => {
     while(end<lineText.length && type.test(lineText.charAt(end))){ end += 1; }
 
     return {start, end};
-};
-
-export const deleteSelection = editor => {
-    return editor.exec({
-        delete: editor.ranges,
-        ranges: editor.ranges.map(range => editor.range(range.tail))
-    });
 };
 
 export const deleteSelectionForward = editor => {
@@ -227,17 +236,12 @@ export const deleteSubwordBackwards = editor => {
     });
 };
 
-export const insertText = (editor, text) => {
-    const lines = text.split('\n');
-    const insertionRanges = lines.length===editor.ranges.length ? editor.ranges.map((range, i) => [range.head, lines[i]]) : editor.ranges.map(range => [range.head, text]);
-
-    return editor.exec({
-        insert: insertionRanges,
-    });
-};
-
 export const overwriteText = (editor, text) => {
     return deleteSelection(editor) && insertText(editor, text);
+};
+
+export const overwriteNewline = editor => {
+    return deleteSelection(editor) && insertText(editor, '\n', false);
 };
 
 export const cursorMoveUp = editor => {

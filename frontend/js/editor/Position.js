@@ -50,4 +50,8 @@ export default class Position{
 
         return new Position(this._editor, newLine, newDocumentPosition-newLinePosition);
     };
+
+    toString(){
+        return `Position(${this.line}, ${this.col})`;
+    };
 };

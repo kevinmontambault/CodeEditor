@@ -36,6 +36,8 @@ import {
     removeExtraCursors,
     fontSizeUp,
     fontSizeDown,
+    overwriteText,
+    overwriteNewline,
     undo,
     redo,
     copySelection,
@@ -54,7 +56,7 @@ export default {
     'Ctrl+Delete': deleteWordForward,
     'Alt+Delete': deleteSubwordForward,
 
-    // 'Enter': insertCharacter('\n'),
+    'Enter': overwriteNewline,
     // 'Ctrl+Enter': insertBlankLine,
     // 'Ctrl+Shift+Enter': insertNewline,
 
@@ -110,6 +112,4 @@ export default {
 
     // 'Ctrl+KeyZ': undo,
     'Ctrl+Shift+KeyZ': redo,
-
-    // 'Space': insertCharacter(' '),
 };
