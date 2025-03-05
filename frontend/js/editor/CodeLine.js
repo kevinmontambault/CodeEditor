@@ -1,5 +1,5 @@
 import AddStyle from '../__common__/Style.js';
-import {createHighlighter} from 'http://localhost:3000/npm/shiki@3.0.0/+esm'
+import {createHighlighter} from 'https://cdn.jsdelivr.net/npm/shiki@3.0.0/+esm'
 
 AddStyle(/*css*/`
     .code-line{
@@ -63,10 +63,19 @@ AddStyle(/*css*/`
 const shiki = await createHighlighter({langs:['js'], themes:['monokai']});
 const shikiOptions = {lang:'js', theme:'monokai'};
 
+function escapeHtml(unsafe){
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+};
+
 function hastToHTML(hast){
     return (function closureToHTML(children){
         return children.map(child => {
-            if(child.type === 'text'){ return child.value; }
+            if(child.type === 'text'){ return escapeHtml(child.value); }
             if(child.type === 'element'){ return `<${child.tagName} ${Object.entries(child.properties).map(([n, v]) => `${n}="${v}"`)}>${closureToHTML(child.children)}</${child.tagName}>`; }
             throw new Error('Unrecognized hast type', child.type);
         }).join('');
