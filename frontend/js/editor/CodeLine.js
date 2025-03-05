@@ -171,7 +171,7 @@ export default class CodeLine extends HTMLElement{
         const hast = shiki.codeToHast(this.text, options);
 
         this.textContentContainer.innerHTML = hastToHTML(hast);
-        this.lineNumberContainer.innerText = this.parentArea.getLineIndex(this);
+        this.lineNumberContainer.innerText = this.parentArea.getLineIndex(this) + 1;
 
         this.rendered = true;
         this.nextLine?.render();

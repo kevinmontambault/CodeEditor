@@ -135,21 +135,6 @@ AddStyle(/*css*/`
     .file-explorer{
         padding: 2px;
     }
-
-    .file-explorer .open-button-container{
-        margin-top: 20px;
-    }
-
-    .file-explorer .open-button{
-        border-radius: 3px;
-        background-color: var(--badge-background);
-        color: var(--badge-foreground);
-        padding: 2px 4px;
-        width: 100px;
-        cursor: pointer;
-        user-select: none;
-        font-size: .8rem;
-    }
 `);
 
 export default class FileExplorer extends HTMLElement{
@@ -164,30 +149,18 @@ export default class FileExplorer extends HTMLElement{
         this.innerHTML = /*html*/`
             <div class="root-name"></div>
 
-            <div class="open-button-container flex-center">
-                <div class="open-button flex-center pointer-events">Open Folder</div>
-            </div>
-
             <div class="file-tree flex-fill scroll-container">
             </div>
         `;
 
-        // prompt the user to select a root folder when the 'open' button is clicked
-        this.querySelector('.open-button').addEventListener('click', () => this.promptOpenFolder());
-
         this.root = null;
-    };
-
-    // prompts a user to select a root folder
-    promptOpenFolder(){
-        this.openFolder('$$$');
+        this.openFolder('Random/Node/CodeEditor');
     };
 
     // renders a root folder
     openFolder(directory){
         if(this.root){ this.closeFolder(); }
 
-        this.querySelector('.open-button-container').classList.add('hidden');
         this.querySelector('.root-name').textContent = '';
         this.querySelector('.file-tree').appendChild(new FolderEntry(directory, directory, 0));
 
@@ -195,7 +168,6 @@ export default class FileExplorer extends HTMLElement{
     };
     
     closeFolder(){
-        this.querySelector('.open-button-container').classList.remove('hidden');
         this.querySelector('.root-name').textContent = '';
 
         const fileTree = this.querySelector('.file-tree');

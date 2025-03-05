@@ -67,6 +67,13 @@ export default class EditorTab extends HTMLElement{
             <svg class="close-button" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="m336-280-56-56 144-144-144-143 56-56 144 144 143-144 56 56-144 143 144 144-56 56-143-144-144 144Z"/></svg>
         `;
 
+        // close on middle click
+        this.addEventListener('mousedown', event => {
+            if(event.button !== 1){ return; }
+            this.close();
+            event.preventDefault();
+        });
+
         this.addEventListener('click', () => this.active = true);
         this.querySelector('.close-button').addEventListener('click', clickEvent => {
             this.close();

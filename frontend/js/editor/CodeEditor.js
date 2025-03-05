@@ -50,7 +50,7 @@ export class CodeEditor extends HTMLElement{
 
         this.fileContentCache = new Map();
 
-        this.openFile('index.js', 'Random/Node/CodeEditor/app.js');
+        this.openFile('app.js', 'Random/Node/CodeEditor/app.js');
     };
 
     async openFile(fileName, filePath){
