@@ -3,7 +3,8 @@ const express = require('express');
 const crypto  = require('crypto');
 const path    = require('path');
 const qrcode  = require('qrcode-terminal');
-const encrypt = require('E:/Desktop/Libraries/Node/ExpressEncrypt');
+
+const Utils = require(path.join(__dirname, 'utils.js'));
 
 const config = require(path.join(__dirname, 'config.json'));
 const baseUrl = `${config.host}:${config.port}`;
@@ -21,14 +22,8 @@ catch(err){
 }
 const aesKey  = keyContent.subarray(0,  32);
 const hmacKey = keyContent.subarray(32, 64);
-const encryptMiddleware = encrypt({aesKey, hmacKey});
-
-function validatePath(filePath){
-    const rootPath = path.normalize(config.root);
-    const fullPath = path.normalize(path.join(rootPath, decodeURIComponent(filePath)));
-    if(fullPath.startsWith(rootPath)){ return fullPath; }
-    return null;
-};
+const encryptMiddleware = Utils.expressEncryptMiddleware({aesKey, hmacKey});
+const validatePath = Utils.validatePath(config.root);
 
 // allow requests from all origins
 app.use('/', (req, res, next) => {
