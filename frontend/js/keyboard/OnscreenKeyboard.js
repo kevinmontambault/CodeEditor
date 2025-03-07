@@ -102,6 +102,16 @@ AddStyle(/*css*/`
     }
 `);
 
+const cursorIndicator = document.createElement('div');
+Object.assign(cursorIndicator.style, {
+    width: '1px',
+    height: '1px',
+    backgroundColor: 'red',
+    position: 'fixed',
+});
+document.body.appendChild(cursorIndicator);
+window.addEventListener('pointermove', ({clientX, clientY}) => Object.assign(cursorIndicator.style, {left:`${clientX}px`, top:`${clientY}px`}));
+
 function duplicateKeyboardEvent(event){
     return Object.assign(new KeyboardEvent(event.type, {
         timestamp:  event.timestamp,
@@ -460,7 +470,7 @@ export default class OnscreenKeyboard extends HTMLElement{
         this.lastMouseUp   = {timestamp:0, counter:0};
         this.lastClick     = {timestamp:0, counter:0};
         
-        this.addEventListener('pointerup', upEvent => {
+        window.addEventListener('pointerup', upEvent => {
             const keyElement = this.pressedKeyMap[upEvent.pointerId];
             if(!keyElement){ return; }
 
@@ -652,9 +662,9 @@ export default class OnscreenKeyboard extends HTMLElement{
         this.cursorPosition.y = y;
 
         if(this.orientation === 'portrait'){
-            this.cursor.style.transform = `translate(${Math.round(this.cursorPosition.y-6)}px, ${Math.round(this.windowSize.width - this.cursorPosition.x-9)}px)`;
+            this.cursor.style.transform = `translate(${Math.round(this.cursorPosition.y)}px, ${Math.round(this.windowSize.width - this.cursorPosition.x)}px)`;
         }else{
-            this.cursor.style.transform = `translate(${Math.round(this.cursorPosition.x-9)}px, ${Math.round(this.cursorPosition.y-6)}px)`;
+            this.cursor.style.transform = `translate(${Math.round(this.cursorPosition.x)}px, ${Math.round(this.cursorPosition.y)}px)`;
         }
 
         // pointer enter and leave events
