@@ -74,7 +74,6 @@ AddStyle(/*css*/`
     }
 
     .onscreen-keyboard .key-row>div:before, .onscreen-keyboard .touchpad:before{
-        box-shadow: inset -.1vw -.1vw #000000;
         z-index: -1;
         content: "";
         background: #000;
@@ -91,8 +90,8 @@ AddStyle(/*css*/`
         fill: #FFFFFF;
     }
 
-    onscreen-keyboard .key-row>div.pressed:before{
-        box-shadow: inset .1vw .1vw #000000;
+    onscreen-keyboard .key-row>div.pressed{
+        opacity: 0.35;
     }
 
     .onscreen-keyboard .touchpad{
@@ -130,10 +129,11 @@ function duplicateMouseEvent(event){
 };
 
 export default class OnscreenKeyboard extends HTMLElement{
-    static CLICK_HOLD_TIME = 300;
     static CLICK_MOVE_THRESH = 10;
+    static CLICK_HOLD_TIME = 300;
     static DBL_CLICK_TIME = 300;
     static KEY_LOCK_TIME = 300;
+    static HAPTIC_TIMEOUT = 150;
 
     static isElementFocusable(element){
         if(element.hasAttribute('tabindex')){
@@ -511,8 +511,6 @@ export default class OnscreenKeyboard extends HTMLElement{
                     keyElement.classList.add('locked');
                     keyElement.locked = true;
                 }
-
-                keyElement.lastPress = performance.now();
             }
 
             // only dispatch a key event if there is a focused element to receive it, and the keyboard key has a key code (isn't a custom action key)
@@ -553,6 +551,9 @@ export default class OnscreenKeyboard extends HTMLElement{
                 }, downEventArgs)), {virtual:true}));
             }
         }
+
+        // set lastPress, which is used in a few places for haptics and lock mechanics
+        keyElement.lastPress = performance.now();
     };
     
     // press a key based on the key code
@@ -566,7 +567,8 @@ export default class OnscreenKeyboard extends HTMLElement{
         keyElement.classList.remove('pressed');
         keyElement.pressedCount -= 1;
 
-        navigator.vibrate(Array.from(new Array(20), () => 1));
+        // if they key wasn't rapidly pressed, indicate release
+        if(performance.now() - keyElement.lastPress > OnscreenKeyboard.HAPTIC_TIMEOUT){ navigator.vibrate(20); }
 
         // key isn't actually fully released
         if(keyElement.pressedCount || keyElement.locked){ return; }
