@@ -428,6 +428,14 @@ export const selectDocEnd = editor => {
     });
 };
 
+export const swapLineUp = editor => {
+
+};
+
+export const swapLineDown = editor => {
+
+};
+
 export const addCursorDown = editor => {
     return editor.exec({
         ranges: editor.ranges.map(range => [range, editor.range(getCharPositionDown(editor, range.head))]).flat()
@@ -494,7 +502,6 @@ export const cutSelection = editor => {
 
 export const paste = editor => {
     return overwriteText(editor, Clipboard.read());
-    return true;
 };
 
 export const undo = editor => {

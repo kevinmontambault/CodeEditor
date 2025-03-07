@@ -30,6 +30,8 @@ import {
     deleteSelectionBackwards,
     deleteWordBackwards,
     deleteSubwordBackwards,
+    swapLineUp,
+    swapLineDown,
     addCursorUp,
     addCursorDown,
     addCursorOnSelection,
@@ -54,7 +56,6 @@ function createInsertText(letter){
 
 // standard key presses
 export default {
-
     'Backspace': deleteSelectionBackwards,
     'Shift+Backspace': deleteSelectionBackwards,
     'Ctrl+Backspace': deleteWordBackwards,
@@ -85,12 +86,12 @@ export default {
     'ArrowUp': cursorMoveUp,
     'Shift+ArrowUp': selectLineUp,
     'Shift+Alt+ArrowUp': addCursorUp,
-    // 'Ctrl+Shift+ArrowUp': moveLineUp,
+    'Ctrl+Shift+ArrowUp': swapLineUp,
 
     'ArrowDown': cursorMoveDown,
     'Shift+ArrowDown': selectLineDown,
     'Shift+Alt+ArrowDown': addCursorDown,
-    // 'Ctrl+Shift+ArrowDown': moveLineDown,
+    'Ctrl+Shift+ArrowDown': swapLineDown,
 
     'Home': cursorLineLeft,
     'Shift+Home': selectLineLeft,

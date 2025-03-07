@@ -247,14 +247,14 @@ export default class CodeArea extends HTMLElement{
 
         let enterTime = 0;
         let leaveTimeout = null;
-        this._scrollGutter.addEventListener('pointerenter', () => {
+        this._scrollGutter.addEventListener('pointerenter', (enterEvent) => {
             clearTimeout(leaveTimeout);
             enterTime = performance.now();
             leaveTimeout = null;
             this._scrollGutter.classList.add('hovered');
         });
         
-        this._scrollGutter.addEventListener('pointerleave', () => {
+        this._scrollGutter.addEventListener('pointerleave', (leaveEvent) => {
             const timeout = performance.now()-enterTime<15 ? 0 : 250;
             leaveTimeout = setTimeout(() => {
                 this._scrollGutter.classList.remove('hovered');
@@ -336,7 +336,7 @@ export default class CodeArea extends HTMLElement{
             const shortcutCode = keyString.join('+');
 
             if(this._keybinds[shortcutCode]?.(this)){ return downEvent.preventDefault(); }
-            if(downEvent.key.length === 1){ return overwriteText(this, downEvent.key) && downEvent.preventDefault(); }
+            if(downEvent.key.length === 1 && !downEvent.ctrlKey && !downEvent.altKey){ return overwriteText(this, downEvent.key) && downEvent.preventDefault(); }
 
             console.log(shortcutCode)
         });

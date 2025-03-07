@@ -48,7 +48,7 @@ AddStyle(/*css*/`
         display: block;
     }
 
-    .onscreen-keybaord .cursor[type="auto"]{
+    .onscreen-keyboard .cursor[type="auto"]{
         background-image: url('/static/img/aero_arrow_l.cur');
     }
     
@@ -660,22 +660,9 @@ export default class OnscreenKeyboard extends HTMLElement{
         // pointer enter and leave events
         const element = this.getElementUnderCursor();
         if(element !== this.lastHoveredElement){
-            if(this.lastHoveredElement){
+            if(this.lastHoveredElement && element && this.lastHoveredElement.contains(element)){
 
-                // remove hovered class from parent elements
-                let curr = this.lastHoveredElement;
-                do{
-                    curr.classList.remove('hovered');
-                    curr = curr.parentNode;
-                }while(curr && (!element || !curr.contains(element)) && curr.classList);
-
-                this.lastHoveredElement.dispatchEvent(Object.assign(new PointerEvent('pointerleave'), {virtual:true}));
-                this.lastHoveredElement.dispatchEvent(Object.assign(new MouseEvent('mouseleave'), {virtual:true}));
-            }
-
-            if(element){
-
-                // add hovered class to all parent elements
+                // add hovered class to all elements between
                 let cursorStyle = null;
                 let curr = element;
                 do{
@@ -685,12 +672,46 @@ export default class OnscreenKeyboard extends HTMLElement{
                     }
                     curr.classList.add('hovered');
                     curr = curr.parentNode;
-                }while(curr && curr.classList && !curr.classList.contains('hovered'));
+                }while(curr !== this.lastHoveredElement);
+
 
                 this.cursor.setAttribute('type', cursorStyle || 'auto');
+    
+                element.dispatchEvent(Object.assign(new PointerEvent('pointerenter'), {virtual:true}));
+                element.dispatchEvent(Object.assign(new MouseEvent('mouseenter'), {virtual:true}));
+            }else{
+                if(this.lastHoveredElement){
+    
+                    // remove hovered class from parent elements
+                    let curr = this.lastHoveredElement;
+                    do{
+                        curr.classList.remove('hovered');
+                        curr = curr.parentNode;
+                    }while(curr && (!element || !curr.contains(element)) && curr.classList);
+    
+                    this.lastHoveredElement.dispatchEvent(Object.assign(new PointerEvent('pointerleave'), {virtual:true}));
+                    this.lastHoveredElement.dispatchEvent(Object.assign(new MouseEvent('mouseleave'), {virtual:true}));
+                }
+    
+                if(element){
+    
+                    // add hovered class to all parent elements
+                    let cursorStyle = null;
+                    let curr = element;
+                    do{
+                        if(!cursorStyle){
+                            const cursor = window.getComputedStyle(curr).cursor;
+                            if(cursor !== 'auto'){ cursorStyle = cursor; }
+                        }
+                        curr.classList.add('hovered');
+                        curr = curr.parentNode;
+                    }while(curr && curr.classList && !curr.classList.contains('hovered'));
 
-                element.dispatchEvent(Object.assign(new PointerEvent('pointerleave'), {virtual:true}));
-                element.dispatchEvent(Object.assign(new MouseEvent('mouseleave'), {virtual:true}));
+                    this.cursor.setAttribute('type', cursorStyle || 'auto');
+    
+                    element.dispatchEvent(Object.assign(new PointerEvent('pointerenter'), {virtual:true}));
+                    element.dispatchEvent(Object.assign(new MouseEvent('mouseenter'), {virtual:true}));
+                }
             }
         }
 
