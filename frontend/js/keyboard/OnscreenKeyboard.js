@@ -70,11 +70,10 @@ AddStyle(/*css*/`
         user-select: none;
         pointer-events: all;
         box-sizing: border-box;
-        flex: 1;
         opacity: 0.2;
     }
 
-    .onscreen-keyboard .key-row>div:before{
+    .onscreen-keyboard .key-row>div:before, .onscreen-keyboard .touchpad:before{
         box-shadow: inset -.1vw -.1vw #000000;
         z-index: -1;
         content: "";
@@ -97,13 +96,10 @@ AddStyle(/*css*/`
     }
 
     .onscreen-keyboard .touchpad{
-        box-shadow: inset .1vw .1vw #000000;
+        position: relative;
         pointer-events: all;
-        background: #000000;
-        width: 8vw;
-        padding-top: .1vw;
-        border-radius: 0.5vw;
         opacity: 0.2;
+        width: 8vw;
     }
 `);
 
@@ -179,101 +175,101 @@ export default class OnscreenKeyboard extends HTMLElement{
 
                 <div class="keyboard-container flex-col flex-fill">
                     <div class="key-row flex-row">
-                        <div data-code="Reload"           noemit style="aspect-ratio: 3.4 / 2.5;"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg></div>
-                        <div data-code=""                 noemit style="aspect-ratio: 3.4 / 2.5;"></div>
-                        <div data-code=""                 noemit style="aspect-ratio: 3.4 / 2.5;"></div>
-                        <div data-code=""                 noemit style="aspect-ratio: 3.4 / 2.5;"></div>
-                        <div data-code=""                 noemit style="aspect-ratio: 3.4 / 2.5;"></div>
-                        <div data-code=""                 noemit style="aspect-ratio: 3.4 / 2.5;"></div>
-                        <div data-code=""                 noemit style="aspect-ratio: 3.4 / 2.5;"></div>
-                        <div data-code="Save"                    style="aspect-ratio: 3.4 / 2.5;"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM480-240q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z"/></svg></div>
-                        <div data-code="Copy"                    style="aspect-ratio: 3.4 / 2.5;"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"/></svg></div>
-                        <div data-code="Cut"                     style="aspect-ratio: 3.4 / 2.5;"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M760-120 480-400l-94 94q8 15 11 32t3 34q0 66-47 113T240-80q-66 0-113-47T80-240q0-66 47-113t113-47q17 0 34 3t32 11l94-94-94-94q-15 8-32 11t-34 3q-66 0-113-47T80-720q0-66 47-113t113-47q66 0 113 47t47 113q0 17-3 34t-11 32l494 494v40H760ZM600-520l-80-80 240-240h120v40L600-520ZM240-640q33 0 56.5-23.5T320-720q0-33-23.5-56.5T240-800q-33 0-56.5 23.5T160-720q0 33 23.5 56.5T240-640Zm240 180q8 0 14-6t6-14q0-8-6-14t-14-6q-8 0-14 6t-6 14q0 8 6 14t14 6ZM240-160q33 0 56.5-23.5T320-240q0-33-23.5-56.5T240-320q-33 0-56.5 23.5T160-240q0 33 23.5 56.5T240-160Z"/></svg></div>
-                        <div data-code="Paste"                   style="aspect-ratio: 3.4 / 2.5;"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h167q11-35 43-57.5t70-22.5q40 0 71.5 22.5T594-840h166q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560h-80v120H280v-120h-80v560Zm280-560q17 0 28.5-11.5T520-800q0-17-11.5-28.5T480-840q-17 0-28.5 11.5T440-800q0 17 11.5 28.5T480-760Z"/></svg></div>
-                        <div data-code="ToggleCollapsed"  noemit style="aspect-ratio: 3.4 / 2.5;">
+                        <div data-code="Reload"           noemit width="1.36"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg></div>
+                        <div data-code=""                 noemit width="1.36"></div>
+                        <div data-code=""                 noemit width="1.36"></div>
+                        <div data-code=""                 noemit width="1.36"></div>
+                        <div data-code=""                 noemit width="1.36"></div>
+                        <div data-code=""                 noemit width="1.36"></div>
+                        <div data-code=""                 noemit width="1.36"></div>
+                        <div data-code="Save"                    width="1.36"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM480-240q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z"/></svg></div>
+                        <div data-code="Copy"                    width="1.36"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"/></svg></div>
+                        <div data-code="Cut"                     width="1.36"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M760-120 480-400l-94 94q8 15 11 32t3 34q0 66-47 113T240-80q-66 0-113-47T80-240q0-66 47-113t113-47q17 0 34 3t32 11l94-94-94-94q-15 8-32 11t-34 3q-66 0-113-47T80-720q0-66 47-113t113-47q66 0 113 47t47 113q0 17-3 34t-11 32l494 494v40H760ZM600-520l-80-80 240-240h120v40L600-520ZM240-640q33 0 56.5-23.5T320-720q0-33-23.5-56.5T240-800q-33 0-56.5 23.5T160-720q0 33 23.5 56.5T240-640Zm240 180q8 0 14-6t6-14q0-8-6-14t-14-6q-8 0-14 6t-6 14q0 8 6 14t14 6ZM240-160q33 0 56.5-23.5T320-240q0-33-23.5-56.5T240-320q-33 0-56.5 23.5T160-240q0 33 23.5 56.5T240-160Z"/></svg></div>
+                        <div data-code="Paste"                   width="1.36"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h167q11-35 43-57.5t70-22.5q40 0 71.5 22.5T594-840h166q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560h-80v120H280v-120h-80v560Zm280-560q17 0 28.5-11.5T520-800q0-17-11.5-28.5T480-840q-17 0-28.5 11.5T440-800q0 17 11.5 28.5T480-760Z"/></svg></div>
+                        <div data-code="ToggleCollapsed"  noemit width="1.36">
                             <svg class="hide-keyboard-icon" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="m644-428-58-58q9-47-27-88t-93-32l-58-58q17-8 34.5-12t37.5-4q75 0 127.5 52.5T660-500q0 20-4 37.5T644-428Zm128 126-58-56q38-29 67.5-63.5T832-500q-50-101-143.5-160.5T480-720q-29 0-57 4t-55 12l-62-62q41-17 84-25.5t90-8.5q151 0 269 83.5T920-500q-23 59-60.5 109.5T772-302Zm20 246L624-222q-35 11-70.5 16.5T480-200q-151 0-269-83.5T40-500q21-53 53-98.5t73-81.5L56-792l56-56 736 736-56 56ZM222-624q-29 26-53 57t-41 67q50 101 143.5 160.5T480-280q20 0 39-2.5t39-5.5l-36-38q-11 3-21 4.5t-21 1.5q-75 0-127.5-52.5T300-500q0-11 1.5-21t4.5-21l-84-82Zm319 93Zm-151 75Z"/></svg>
                             <svg class="show-keyboard-icon" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z"/></svg>
                         </div>
                     </div>
 
                     <div class="key-row flex-row collapsable">
-                        <div data-code="Backquote" data-key1="\`" data-key2="~" repeat style="aspect-ratio: 2.5 / 2.5">${'`'}</div>
-                        <div data-code="Digit1"    data-key1="1"  data-key2="!" repeat style="aspect-ratio: 2.5 / 2.5">1</div>
-                        <div data-code="Digit2"    data-key1="2"  data-key2="@" repeat style="aspect-ratio: 2.5 / 2.5">2</div>
-                        <div data-code="Digit3"    data-key1="3"  data-key2="#" repeat style="aspect-ratio: 2.5 / 2.5">3</div>
-                        <div data-code="Digit4"    data-key1="4"  data-key2="$" repeat style="aspect-ratio: 2.5 / 2.5">4</div>
-                        <div data-code="Digit5"    data-key1="5"  data-key2="%" repeat style="aspect-ratio: 2.5 / 2.5">5</div>
-                        <div data-code="Digit6"    data-key1="6"  data-key2="^" repeat style="aspect-ratio: 2.5 / 2.5">6</div>
-                        <div data-code="Digit7"    data-key1="7"  data-key2="&" repeat style="aspect-ratio: 2.5 / 2.5">7</div>
-                        <div data-code="Digit8"    data-key1="8"  data-key2="*" repeat style="aspect-ratio: 2.5 / 2.5">8</div>
-                        <div data-code="Digit9"    data-key1="9"  data-key2="(" repeat style="aspect-ratio: 2.5 / 2.5">9</div>
-                        <div data-code="Digit0"    data-key1="0"  data-key2=")" repeat style="aspect-ratio: 2.5 / 2.5">0</div>
-                        <div data-code="Minus"     data-key1="-"  data-key2="_" repeat style="aspect-ratio: 2.5 / 2.5">-</div>
-                        <div data-code="Equal"     data-key1="="  data-key2="+" repeat style="aspect-ratio: 2.5 / 2.5">=</div>
-                        <div data-code="Backspace"                              repeat style="aspect-ratio: 5.5 / 2.5">Backspace</div>
-                        <div data-code="Delete"                                 repeat style="aspect-ratio: 2.5 / 2.5">Del</div>
+                        <div data-code="Backquote" data-key1="\`" data-key2="~" repeat width="1.00">${'`'}</div>
+                        <div data-code="Digit1"    data-key1="1"  data-key2="!" repeat width="1.00">1</div>
+                        <div data-code="Digit2"    data-key1="2"  data-key2="@" repeat width="1.00">2</div>
+                        <div data-code="Digit3"    data-key1="3"  data-key2="#" repeat width="1.00">3</div>
+                        <div data-code="Digit4"    data-key1="4"  data-key2="$" repeat width="1.00">4</div>
+                        <div data-code="Digit5"    data-key1="5"  data-key2="%" repeat width="1.00">5</div>
+                        <div data-code="Digit6"    data-key1="6"  data-key2="^" repeat width="1.00">6</div>
+                        <div data-code="Digit7"    data-key1="7"  data-key2="&" repeat width="1.00">7</div>
+                        <div data-code="Digit8"    data-key1="8"  data-key2="*" repeat width="1.00">8</div>
+                        <div data-code="Digit9"    data-key1="9"  data-key2="(" repeat width="1.00">9</div>
+                        <div data-code="Digit0"    data-key1="0"  data-key2=")" repeat width="1.00">0</div>
+                        <div data-code="Minus"     data-key1="-"  data-key2="_" repeat width="1.00">-</div>
+                        <div data-code="Equal"     data-key1="="  data-key2="+" repeat width="1.00">=</div>
+                        <div data-code="Backspace"                              repeat width="2.32">Backspace</div>
+                        <div data-code="Delete"                                 repeat width="1.00">Del</div>
                     </div>
                     
                     <div class="key-row flex-row collapsable">
-                        <div data-code="Tab"                                       repeat      style="width:3.8em">Tab</div>
-                        <div data-code="KeyQ"         data-key1="q"  data-key2="Q" repeat caps                    >q</div>
-                        <div data-code="KeyW"         data-key1="w"  data-key2="W" repeat caps                    >w</div>
-                        <div data-code="KeyE"         data-key1="e"  data-key2="E" repeat caps                    >e</div>
-                        <div data-code="KeyR"         data-key1="r"  data-key2="R" repeat caps                    >r</div>
-                        <div data-code="KeyT"         data-key1="t"  data-key2="T" repeat caps                    >t</div>
-                        <div data-code="KeyY"         data-key1="y"  data-key2="Y" repeat caps                    >y</div>
-                        <div data-code="KeyU"         data-key1="u"  data-key2="U" repeat caps                    >u</div>
-                        <div data-code="KeyI"         data-key1="i"  data-key2="I" repeat caps                    >i</div>
-                        <div data-code="KeyO"         data-key1="o"  data-key2="O" repeat caps                    >o</div>
-                        <div data-code="KeyP"         data-key1="p"  data-key2="P" repeat caps                    >p</div>
-                        <div data-code="BracketLeft"  data-key1="["  data-key2="{" repeat                         >[</div>
-                        <div data-code="BracketRight" data-key1="]"  data-key2="}" repeat                         >]</div>
-                        <div data-code="Backslash"    data-key1="\\" data-key2="|" repeat      style="width:4.2em">\\</div>
-                        <div data-code="Home"                                                                     >Home</div>
+                        <div data-code="Tab"                                       repeat      width="1.50">Tab</div>
+                        <div data-code="KeyQ"         data-key1="q"  data-key2="Q" repeat caps width="1.00">q</div>
+                        <div data-code="KeyW"         data-key1="w"  data-key2="W" repeat caps width="1.00">w</div>
+                        <div data-code="KeyE"         data-key1="e"  data-key2="E" repeat caps width="1.00">e</div>
+                        <div data-code="KeyR"         data-key1="r"  data-key2="R" repeat caps width="1.00">r</div>
+                        <div data-code="KeyT"         data-key1="t"  data-key2="T" repeat caps width="1.00">t</div>
+                        <div data-code="KeyY"         data-key1="y"  data-key2="Y" repeat caps width="1.00">y</div>
+                        <div data-code="KeyU"         data-key1="u"  data-key2="U" repeat caps width="1.00">u</div>
+                        <div data-code="KeyI"         data-key1="i"  data-key2="I" repeat caps width="1.00">i</div>
+                        <div data-code="KeyO"         data-key1="o"  data-key2="O" repeat caps width="1.00">o</div>
+                        <div data-code="KeyP"         data-key1="p"  data-key2="P" repeat caps width="1.00">p</div>
+                        <div data-code="BracketLeft"  data-key1="["  data-key2="{" repeat      width="1.00">[</div>
+                        <div data-code="BracketRight" data-key1="]"  data-key2="}" repeat      width="1.00">]</div>
+                        <div data-code="Backslash"    data-key1="\\" data-key2="|" repeat      width="1.82">\\</div>
+                        <div data-code="Home"                                                  width="1.00">Home</div>
                     </div>
                     
                     <div class="key-row flex-row collapsable">
-                        <div data-code="Capslock"                                           style="width:4.7em">Caps</div>
-                        <div data-code="KeyA"      data-key1="a" data-key2="A" repeat caps                    >a</div>
-                        <div data-code="KeyS"      data-key1="s" data-key2="S" repeat caps                    >s</div>
-                        <div data-code="KeyD"      data-key1="d" data-key2="D" repeat caps                    >d</div>
-                        <div data-code="KeyF"      data-key1="f" data-key2="F" repeat caps                    >f</div>
-                        <div data-code="KeyG"      data-key1="g" data-key2="G" repeat caps                    >g</div>
-                        <div data-code="KeyH"      data-key1="h" data-key2="H" repeat caps                    >h</div>
-                        <div data-code="KeyJ"      data-key1="j" data-key2="J" repeat caps                    >j</div>
-                        <div data-code="KeyK"      data-key1="k" data-key2="K" repeat caps                    >k</div>
-                        <div data-code="KeyL"      data-key1="l" data-key2="L" repeat caps                    >l</div>
-                        <div data-code="Semicolon" data-key1=";" data-key2=":" repeat                         >;</div>
-                        <div data-code="Quote"     data-key1="'" data-key2='"' repeat                         >'</div>
-                        <div data-code="Enter"                                 repeat      style="width:5.9em">Enter</div>
-                        <div data-code="End"                                   repeat                         >End</div>
+                        <div data-code="Capslock"                                          width="1.75">Caps</div>
+                        <div data-code="KeyA"      data-key1="a" data-key2="A" repeat caps width="1.00">a</div>
+                        <div data-code="KeyS"      data-key1="s" data-key2="S" repeat caps width="1.00">s</div>
+                        <div data-code="KeyD"      data-key1="d" data-key2="D" repeat caps width="1.00">d</div>
+                        <div data-code="KeyF"      data-key1="f" data-key2="F" repeat caps width="1.00">f</div>
+                        <div data-code="KeyG"      data-key1="g" data-key2="G" repeat caps width="1.00">g</div>
+                        <div data-code="KeyH"      data-key1="h" data-key2="H" repeat caps width="1.00">h</div>
+                        <div data-code="KeyJ"      data-key1="j" data-key2="J" repeat caps width="1.00">j</div>
+                        <div data-code="KeyK"      data-key1="k" data-key2="K" repeat caps width="1.00">k</div>
+                        <div data-code="KeyL"      data-key1="l" data-key2="L" repeat caps width="1.00">l</div>
+                        <div data-code="Semicolon" data-key1=";" data-key2=":" repeat      width="1.00">;</div>
+                        <div data-code="Quote"     data-key1="'" data-key2='"' repeat      width="1.00">'</div>
+                        <div data-code="Enter"                                 repeat      width="2.57">Enter</div>
+                        <div data-code="End"                                   repeat      width="1.00">End</div>
                     </div>
                     
                     <div class="key-row flex-row collapsable">
-                        <div data-code="ShiftLeft"  lockable                                style="width:6em"  >Shift</div>
-                        <div data-code="KeyZ"       data-key1="z" data-key2="Z" repeat caps                    >z</div>
-                        <div data-code="KeyX"       data-key1="x" data-key2="X" repeat caps                    >x</div>
-                        <div data-code="KeyC"       data-key1="c" data-key2="C" repeat caps                    >c</div>
-                        <div data-code="KeyV"       data-key1="v" data-key2="V" repeat caps                    >v</div>
-                        <div data-code="KeyB"       data-key1="b" data-key2="B" repeat caps                    >b</div>
-                        <div data-code="KeyN"       data-key1="n" data-key2="N" repeat caps                    >n</div>
-                        <div data-code="KeyM"       data-key1="m" data-key2="M" repeat caps                    >m</div>
-                        <div data-code="Comma"      data-key1="," data-key2="<" repeat                         >,</div>
-                        <div data-code="Period"     data-key1="." data-key2=">" repeat                         >.</div>
-                        <div data-code="Slash"      data-key1="/" data-key2="?" repeat                         >/</div>
-                        <div data-code="ShiftRight" lockable                                style="width:7.2em">Shift</div>
-                        <div data-code="ArrowUp"                                repeat                         ><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M480-528 296-344l-56-56 240-240 240 240-56 56-184-184Z"/></svg></div>
+                        <div data-code="ShiftLeft"  lockable                                width="2.25">Shift</div>
+                        <div data-code="KeyZ"       data-key1="z" data-key2="Z" repeat caps width="1.00">z</div>
+                        <div data-code="KeyX"       data-key1="x" data-key2="X" repeat caps width="1.00">x</div>
+                        <div data-code="KeyC"       data-key1="c" data-key2="C" repeat caps width="1.00">c</div>
+                        <div data-code="KeyV"       data-key1="v" data-key2="V" repeat caps width="1.00">v</div>
+                        <div data-code="KeyB"       data-key1="b" data-key2="B" repeat caps width="1.00">b</div>
+                        <div data-code="KeyN"       data-key1="n" data-key2="N" repeat caps width="1.00">n</div>
+                        <div data-code="KeyM"       data-key1="m" data-key2="M" repeat caps width="1.00">m</div>
+                        <div data-code="Comma"      data-key1="," data-key2="<" repeat      width="1.00">,</div>
+                        <div data-code="Period"     data-key1="." data-key2=">" repeat      width="1.00">.</div>
+                        <div data-code="Slash"      data-key1="/" data-key2="?" repeat      width="1.00">/</div>
+                        <div data-code="ShiftRight" lockable                                width="3.08">Shift</div>
+                        <div data-code="ArrowUp"                                repeat      width="1.00"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M480-528 296-344l-56-56 240-240 240 240-56 56-184-184Z"/></svg></div>
                     </div>
                     
                     <div class="key-row flex-row collapsable">
-                        <div data-code="ControlLeft"  lockable             style="width:3.6em">Ctrl</div>
-                        <div data-code="AltLeft"      lockable             style="width:3.6em">Alt</div>
-                        <div data-code="Space"        data-key1=" " repeat style="width:19.3em"></div>
-                        <div data-code="AltRight"     lockable             style="width:3.6em">Alt</div>
-                        <div data-code="ControlRight" lockable             style="width:3.6em">Ctrl</div>
-                        <div data-code="ArrowLeft"                  repeat                    ><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg></div>
-                        <div data-code="ArrowRight"                 repeat                    ><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg></div>
-                        <div data-code="ArrowDown"                  repeat                    ><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/></svg></div>
+                        <div data-code="ControlLeft"  lockable             width="1.40">Ctrl</div>
+                        <div data-code="AltLeft"      lockable             width="1.40">Alt</div>
+                        <div data-code="Space"        data-key1=" " repeat width="7.64"></div>
+                        <div data-code="AltRight"     lockable             width="1.44">Alt</div>
+                        <div data-code="ControlRight" lockable             width="1.44">Ctrl</div>
+                        <div data-code="ArrowLeft"                  repeat width="1.00"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg></div>
+                        <div data-code="ArrowRight"                 repeat width="1.00"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg></div>
+                        <div data-code="ArrowDown"                  repeat width="1.00"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/></svg></div>
                     </div>
                 </div>
 
@@ -438,6 +434,11 @@ export default class OnscreenKeyboard extends HTMLElement{
             keyElement.caps   = keyElement.hasAttribute('caps');
             keyElement.key    = keyElement.key1 || keyElement.code;
             keyElement.emit   = !keyElement.hasAttribute('noemit');
+
+            // set key sizes
+            const width = parseFloat(keyElement.getAttribute('width'));
+            keyElement.style.flex = width;
+            keyElement.style.aspectRatio = width;
 
             // listen for key presses
             keyElement.addEventListener('pointerdown', downEvent => {
