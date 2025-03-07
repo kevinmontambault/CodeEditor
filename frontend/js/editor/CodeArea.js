@@ -5,7 +5,6 @@ import SelectionRange from './SelectionRange.js';
 import Position       from './Position.js';
 import CodeLine       from './CodeLine.js';
 import Keybinds       from './Keybinds.js';
-import Clipboard      from './Clipboard.js';
 
 import {overwriteText, getWordBoundsAtPosition} from './Commands.js';
 
@@ -40,7 +39,6 @@ AddStyle(/*css*/`
         width: 100%;
         height: 100%;
         top: 0;
-        pointer-events: all;
     }
 
     .code-area .scroll-gutter{
@@ -48,7 +46,6 @@ AddStyle(/*css*/`
         width: 10px;
         user-select: none;
         transition: width .08s;
-        pointer-events: all;
         cursor: pointer;
     }
 
@@ -168,12 +165,12 @@ export default class CodeArea extends HTMLElement{
             <textarea class="clipboard"></textarea>
 
             <div class="table-container">
-                <div class="row-window"></div>
+                <div class="row-window pointer-events"></div>
             </div>
 
-            <div class="scroll-gutter">
+            <div class="scroll-gutter pointer-events">
                 <div class="scroll-handle-container">
-                    <div class="scroll-handle"></div>
+                    <div class="scroll-handle pointer-events"></div>
                 </div>
             </div>
         `;
@@ -212,20 +209,19 @@ export default class CodeArea extends HTMLElement{
         this.addEventListener('wheel', e => this.scrollTo(this._queuedState.scrollTarget+e.deltaY));
 
         // scrolling by dragging scroll bar
-        const scrollHandleContainer = this.querySelector('.scroll-handle-container');
         this._scrollGutter.addEventListener('pointerdown', e => {
             if(e.button !== 0){ return; }
 
             this._scrollGutter.classList.add('dragging');
             const startScreenY = e.screenY;
-            
+
             let startScrollY;
-            if(e.target === scrollHandleContainer){
-                startScrollY = Math.min(this._renderedState.parentHeight - this._renderedState.scrollHandleHeight, Math.max(0, e.offsetY - this._renderedState.scrollHandleHeight/2));
-                this.scrollTo(startScrollY/(this._renderedState.parentHeight - this._renderedState.scrollHandleHeight) * this._renderedState.rowCount*this._lineHeight);
+            if(e.target === this._scrollGutter){
+                startScrollY = e.offsetY - this._renderedState.scrollHandleHeight/2;
+                this.scrollTo(startScrollY/this._renderedState.parentHeight * this._lines.length*this._lineHeight);
                 reload(this);
             }else{
-                startScrollY = this._renderedState.scrollTarget / this._renderedState.rowCount / this._lineHeight * (this._renderedState.parentHeight - this._renderedState.scrollHandleHeight);
+                startScrollY = (this._renderedState.parentHeight / this._renderedState.rowCount / this._lineHeight) * this._renderedState.scrollPosition;
             }
 
             const moveHandler = ({screenY}) => {
@@ -247,14 +243,14 @@ export default class CodeArea extends HTMLElement{
 
         let enterTime = 0;
         let leaveTimeout = null;
-        this._scrollGutter.addEventListener('pointerenter', (enterEvent) => {
+        this._scrollGutter.addEventListener('pointerenter', () => {
             clearTimeout(leaveTimeout);
             enterTime = performance.now();
             leaveTimeout = null;
             this._scrollGutter.classList.add('hovered');
         });
         
-        this._scrollGutter.addEventListener('pointerleave', (leaveEvent) => {
+        this._scrollGutter.addEventListener('pointerleave', () => {
             const timeout = performance.now()-enterTime<15 ? 0 : 250;
             leaveTimeout = setTimeout(() => {
                 this._scrollGutter.classList.remove('hovered');
