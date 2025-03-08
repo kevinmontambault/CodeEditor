@@ -37,15 +37,10 @@ AddStyle(/*css*/`
         background-repeat: no-repeat;
         width: 19px;
         height: 13px;
+        background-position-x: left;
         background-image: url('/static/img/aero_arrow_l.cur');
-    }
-
-    .onscreen-keyboard .cursor:before{
-        content: "";
-        background-color: red;
-        width: 1px;
-        height: 1px;
-        display: block;
+        left: 0;
+        top: 0;
     }
 
     .onscreen-keyboard .cursor[type="auto"]{
@@ -54,11 +49,14 @@ AddStyle(/*css*/`
     
     .onscreen-keyboard .cursor[type="pointer"]{
         background-image: url('/static/img/aero_link_l.cur');
+        left: -3px;
     }
 
     .onscreen-keyboard .cursor[type="text"]{
         background-image: url('/static/img/ibeam.png');
         filter: invert(100%);
+        left: -2px;
+        top: -6px;
     }
 
     .onscreen-keyboard .key-row>div{
@@ -101,16 +99,6 @@ AddStyle(/*css*/`
         width: 8vw;
     }
 `);
-
-const cursorIndicator = document.createElement('div');
-Object.assign(cursorIndicator.style, {
-    width: '1px',
-    height: '1px',
-    backgroundColor: 'red',
-    position: 'fixed',
-});
-document.body.appendChild(cursorIndicator);
-window.addEventListener('pointermove', ({clientX, clientY}) => Object.assign(cursorIndicator.style, {left:`${clientX}px`, top:`${clientY}px`}));
 
 function duplicateKeyboardEvent(event){
     return Object.assign(new KeyboardEvent(event.type, {
@@ -176,7 +164,7 @@ export default class OnscreenKeyboard extends HTMLElement{
         this.classList.add('onscreen-keyboard', 'collapsed', 'flex-col');
 
         this.innerHTML = /*html*/`
-            <div class="cursor" type="auto" style="left:0; top:0;"></div>
+            <div class="cursor" type="auto"></div>
 
             <div></div>
 
