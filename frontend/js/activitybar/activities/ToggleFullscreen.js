@@ -19,6 +19,7 @@ export default class ToggleFullscreen extends HTMLElement{
     `;
 
     static name = 'toggle-fullscreen';
+    static active = false;
 
     static command = async () => {
         try{ await (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()); }

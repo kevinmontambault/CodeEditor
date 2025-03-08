@@ -26,13 +26,11 @@ AddStyle(/*css*/`
         display: none;
     }
 
-    .onscreen-keyboard.collapsed .hide-keyboard-icon{
-        display: none;
-    }
-    
-    .onscreen-keyboard:not(.collapsed) .show-keyboard-icon{
-        display: none;
-    }
+    .onscreen-keyboard.fullscreen .enter-fullscreen-icon{ display: none; }
+    .onscreen-keyboard:not(.fullscreen) .exit-fullscreen-icon{ display: none; }
+
+    .onscreen-keyboard.collapsed .hide-keyboard-icon{ display: none; }
+    .onscreen-keyboard:not(.collapsed) .show-keyboard-icon{ display: none; }
 
     .onscreen-keyboard .cursor{
         position: fixed;
@@ -181,7 +179,10 @@ export default class OnscreenKeyboard extends HTMLElement{
                 <div class="keyboard-container flex-col flex-fill">
                     <div class="key-row flex-row">
                         <div data-code="Reload"           noemit width="1.36"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg></div>
-                        <div data-code=""                 noemit width="1.36"></div>
+                        <div data-code="ToggleFullscreen" noemit width="1.36">
+                            <svg class="enter-fullscreen-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M120-120v-200h80v120h120v80H120Zm520 0v-80h120v-120h80v200H640ZM120-640v-200h200v80H200v120h-80Zm640 0v-120H640v-80h200v200h-80Z"/></svg>
+                            <svg class="exit-fullscreen-icon"  xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M240-120v-120H120v-80h200v200h-80Zm400 0v-200h200v80H720v120h-80ZM120-640v-80h120v-120h80v200H120Zm520 0v-200h80v120h120v80H640Z"/></svg>
+                        </div>
                         <div data-code=""                 noemit width="1.36"></div>
                         <div data-code=""                 noemit width="1.36"></div>
                         <div data-code=""                 noemit width="1.36"></div>
@@ -319,6 +320,9 @@ export default class OnscreenKeyboard extends HTMLElement{
                 this.focusedElement.dispatchEvent(new Event('focusin', {cancelable:true, bubbles:true}));
             }
         });
+
+        // toggle the state of the fullscreen button
+        document.addEventListener('fullscreenchange', () => this.classList.toggle('fullscreen', document.fullscreenElement));
 
         // reroute keyboard events to focused element
         const maybeDuplicateEvent = event => {
@@ -590,6 +594,14 @@ export default class OnscreenKeyboard extends HTMLElement{
 
         // toggle the onscreen keyboard
         if(keyElement.code === 'ToggleCollapsed'){ return this.classList.toggle('collapsed'); }
+
+        // toggle fullscreen
+        if(keyElement.code === 'ToggleFullscreen'){
+            return (async () => {
+                try{ await (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()); }
+                catch(err){ console.error(err); }
+            })();
+        }
 
         // change upper-case letters
         if((keyElement.code === 'ShiftLeft' || keyElement.code === 'ShiftRight') && !this.shiftHeld){
