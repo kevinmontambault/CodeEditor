@@ -18,6 +18,10 @@ AddStyle(/*css*/`
         pointer-events: none;
     }
 
+    .onscreen-keyboard.cursor-moving .center-container{
+        opacity: .2;
+    }
+
     .onscreen-keyboard.collapsed .collapsable{
         display: none;
     }
@@ -61,14 +65,15 @@ AddStyle(/*css*/`
 
     .onscreen-keyboard .key-row>div{
         position: relative;
-        color: #FFFFFF;
+        color: #FFF;
         display: flex;
         align-items: center;
         justify-content: center;
         user-select: none;
         pointer-events: all;
         box-sizing: border-box;
-        opacity: 0.2;
+        opacity: 0.6;
+        font-size: 2vw;
     }
 
     .onscreen-keyboard .key-row>div:before, .onscreen-keyboard .touchpad:before{
@@ -81,21 +86,23 @@ AddStyle(/*css*/`
     }
 
     .onscreen-keyboard .key-row>div.locked:before{
-        border: 2px solid #FFFFFF;
+        border: 2px solid #FFF;
     }
 
     .onscreen-keyboard .key-row>div>svg{
-        fill: #FFFFFF;
+        fill: #FFF;
+        aspect-ratio: 1;
+        height: 3vw;
     }
 
     onscreen-keyboard .key-row>div.pressed{
-        opacity: 0.35;
+        opacity: 0.8;
     }
 
     .onscreen-keyboard .touchpad{
         position: relative;
         pointer-events: all;
-        opacity: 0.2;
+        opacity: 0.6;
         width: 8vw;
     }
 `);
@@ -173,20 +180,20 @@ export default class OnscreenKeyboard extends HTMLElement{
 
                 <div class="keyboard-container flex-col flex-fill">
                     <div class="key-row flex-row">
-                        <div data-code="Reload"           noemit width="1.36"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg></div>
+                        <div data-code="Reload"           noemit width="1.36"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg></div>
                         <div data-code=""                 noemit width="1.36"></div>
                         <div data-code=""                 noemit width="1.36"></div>
                         <div data-code=""                 noemit width="1.36"></div>
                         <div data-code=""                 noemit width="1.36"></div>
                         <div data-code=""                 noemit width="1.36"></div>
                         <div data-code=""                 noemit width="1.36"></div>
-                        <div data-code="Save"                    width="1.36"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM480-240q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z"/></svg></div>
-                        <div data-code="Copy"                    width="1.36"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"/></svg></div>
-                        <div data-code="Cut"                     width="1.36"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M760-120 480-400l-94 94q8 15 11 32t3 34q0 66-47 113T240-80q-66 0-113-47T80-240q0-66 47-113t113-47q17 0 34 3t32 11l94-94-94-94q-15 8-32 11t-34 3q-66 0-113-47T80-720q0-66 47-113t113-47q66 0 113 47t47 113q0 17-3 34t-11 32l494 494v40H760ZM600-520l-80-80 240-240h120v40L600-520ZM240-640q33 0 56.5-23.5T320-720q0-33-23.5-56.5T240-800q-33 0-56.5 23.5T160-720q0 33 23.5 56.5T240-640Zm240 180q8 0 14-6t6-14q0-8-6-14t-14-6q-8 0-14 6t-6 14q0 8 6 14t14 6ZM240-160q33 0 56.5-23.5T320-240q0-33-23.5-56.5T240-320q-33 0-56.5 23.5T160-240q0 33 23.5 56.5T240-160Z"/></svg></div>
-                        <div data-code="Paste"                   width="1.36"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h167q11-35 43-57.5t70-22.5q40 0 71.5 22.5T594-840h166q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560h-80v120H280v-120h-80v560Zm280-560q17 0 28.5-11.5T520-800q0-17-11.5-28.5T480-840q-17 0-28.5 11.5T440-800q0 17 11.5 28.5T480-760Z"/></svg></div>
+                        <div data-code="Save"                    width="1.36"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM480-240q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z"/></svg></div>
+                        <div data-code="Copy"                    width="1.36"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"/></svg></div>
+                        <div data-code="Cut"                     width="1.36"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M760-120 480-400l-94 94q8 15 11 32t3 34q0 66-47 113T240-80q-66 0-113-47T80-240q0-66 47-113t113-47q17 0 34 3t32 11l94-94-94-94q-15 8-32 11t-34 3q-66 0-113-47T80-720q0-66 47-113t113-47q66 0 113 47t47 113q0 17-3 34t-11 32l494 494v40H760ZM600-520l-80-80 240-240h120v40L600-520ZM240-640q33 0 56.5-23.5T320-720q0-33-23.5-56.5T240-800q-33 0-56.5 23.5T160-720q0 33 23.5 56.5T240-640Zm240 180q8 0 14-6t6-14q0-8-6-14t-14-6q-8 0-14 6t-6 14q0 8 6 14t14 6ZM240-160q33 0 56.5-23.5T320-240q0-33-23.5-56.5T240-320q-33 0-56.5 23.5T160-240q0 33 23.5 56.5T240-160Z"/></svg></div>
+                        <div data-code="Paste"                   width="1.36"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h167q11-35 43-57.5t70-22.5q40 0 71.5 22.5T594-840h166q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560h-80v120H280v-120h-80v560Zm280-560q17 0 28.5-11.5T520-800q0-17-11.5-28.5T480-840q-17 0-28.5 11.5T440-800q0 17 11.5 28.5T480-760Z"/></svg></div>
                         <div data-code="ToggleCollapsed"  noemit width="1.36">
-                            <svg class="hide-keyboard-icon" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="m644-428-58-58q9-47-27-88t-93-32l-58-58q17-8 34.5-12t37.5-4q75 0 127.5 52.5T660-500q0 20-4 37.5T644-428Zm128 126-58-56q38-29 67.5-63.5T832-500q-50-101-143.5-160.5T480-720q-29 0-57 4t-55 12l-62-62q41-17 84-25.5t90-8.5q151 0 269 83.5T920-500q-23 59-60.5 109.5T772-302Zm20 246L624-222q-35 11-70.5 16.5T480-200q-151 0-269-83.5T40-500q21-53 53-98.5t73-81.5L56-792l56-56 736 736-56 56ZM222-624q-29 26-53 57t-41 67q50 101 143.5 160.5T480-280q20 0 39-2.5t39-5.5l-36-38q-11 3-21 4.5t-21 1.5q-75 0-127.5-52.5T300-500q0-11 1.5-21t4.5-21l-84-82Zm319 93Zm-151 75Z"/></svg>
-                            <svg class="show-keyboard-icon" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z"/></svg>
+                            <svg class="hide-keyboard-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="m644-428-58-58q9-47-27-88t-93-32l-58-58q17-8 34.5-12t37.5-4q75 0 127.5 52.5T660-500q0 20-4 37.5T644-428Zm128 126-58-56q38-29 67.5-63.5T832-500q-50-101-143.5-160.5T480-720q-29 0-57 4t-55 12l-62-62q41-17 84-25.5t90-8.5q151 0 269 83.5T920-500q-23 59-60.5 109.5T772-302Zm20 246L624-222q-35 11-70.5 16.5T480-200q-151 0-269-83.5T40-500q21-53 53-98.5t73-81.5L56-792l56-56 736 736-56 56ZM222-624q-29 26-53 57t-41 67q50 101 143.5 160.5T480-280q20 0 39-2.5t39-5.5l-36-38q-11 3-21 4.5t-21 1.5q-75 0-127.5-52.5T300-500q0-11 1.5-21t4.5-21l-84-82Zm319 93Zm-151 75Z"/></svg>
+                            <svg class="show-keyboard-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z"/></svg>
                         </div>
                     </div>
 
@@ -223,7 +230,7 @@ export default class OnscreenKeyboard extends HTMLElement{
                         <div data-code="BracketLeft"  data-key1="["  data-key2="{" repeat      width="1.00">[</div>
                         <div data-code="BracketRight" data-key1="]"  data-key2="}" repeat      width="1.00">]</div>
                         <div data-code="Backslash"    data-key1="\\" data-key2="|" repeat      width="1.82">\\</div>
-                        <div data-code="Home"                                                  width="1.00">Home</div>
+                        <div data-code="Home"                                                  width="1.00">Hom</div>
                     </div>
                     
                     <div class="key-row flex-row collapsable">
@@ -256,7 +263,7 @@ export default class OnscreenKeyboard extends HTMLElement{
                         <div data-code="Period"     data-key1="." data-key2=">" repeat      width="1.00">.</div>
                         <div data-code="Slash"      data-key1="/" data-key2="?" repeat      width="1.00">/</div>
                         <div data-code="ShiftRight" lockable                                width="3.08">Shift</div>
-                        <div data-code="ArrowUp"                                repeat      width="1.00"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M480-528 296-344l-56-56 240-240 240 240-56 56-184-184Z"/></svg></div>
+                        <div data-code="ArrowUp"                                repeat      width="1.00"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-528 296-344l-56-56 240-240 240 240-56 56-184-184Z"/></svg></div>
                     </div>
                     
                     <div class="key-row flex-row collapsable">
@@ -265,9 +272,9 @@ export default class OnscreenKeyboard extends HTMLElement{
                         <div data-code="Space"        data-key1=" " repeat width="7.64"></div>
                         <div data-code="AltRight"     lockable             width="1.44">Alt</div>
                         <div data-code="ControlRight" lockable             width="1.44">Ctrl</div>
-                        <div data-code="ArrowLeft"                  repeat width="1.00"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg></div>
-                        <div data-code="ArrowRight"                 repeat width="1.00"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg></div>
-                        <div data-code="ArrowDown"                  repeat width="1.00"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 -960 960 960"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/></svg></div>
+                        <div data-code="ArrowLeft"                  repeat width="1.00"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg></div>
+                        <div data-code="ArrowRight"                 repeat width="1.00"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg></div>
+                        <div data-code="ArrowDown"                  repeat width="1.00"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/></svg></div>
                     </div>
                 </div>
 
@@ -533,6 +540,7 @@ export default class OnscreenKeyboard extends HTMLElement{
                 // add a timeout for key repeats
                 if(keyElement.repeat){
                     this.keyRepeatTimeout = setTimeout(function loop(){
+                        navigator.vibrate(20);
                         this.focusedElement.dispatchEvent(Object.assign(new KeyboardEvent('keydown', Object.assign({
                             timestamp: performance.now(),
                             repeat: true,
@@ -829,10 +837,14 @@ export default class OnscreenKeyboard extends HTMLElement{
     };
 
     getElementUnderCursor(){
-        this.classList.add('cursor-moving');
-        const elementAt = document.elementFromPoint(this.cursorPosition.x, this.cursorPosition.y) || null;
-        this.classList.remove('cursor-moving');
-        return elementAt;
+        if(this.classList.contains('cursor-moving')){
+            return document.elementFromPoint(this.cursorPosition.x, this.cursorPosition.y) || null;
+        }else{
+            this.classList.add('cursor-moving');
+            const elementAt = document.elementFromPoint(this.cursorPosition.x, this.cursorPosition.y) || null;
+            this.classList.remove('cursor-moving');
+            return elementAt;
+        }
     };
 
     get shiftHeld(){
