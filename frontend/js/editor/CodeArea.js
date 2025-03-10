@@ -288,7 +288,6 @@ export default class CodeArea extends HTMLElement{
 
         // cursor selection and dragging
         this.addEventListener('pointerdown', downEvent => {
-            console.log(downEvent.offsetX, downEvent.offsetY)
             const downPosition = this.getPositionAt(downEvent.offsetX, downEvent.offsetY);
 
             // nothing was clicked

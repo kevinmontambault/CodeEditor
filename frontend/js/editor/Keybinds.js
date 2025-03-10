@@ -127,4 +127,6 @@ export default {
     'Copy': copySelection,
     'Cut': cutSelection,
     'Paste': paste,
+    'ZoomIn': fontSizeUp,
+    'ZoomOut': fontSizeDown,
 };
