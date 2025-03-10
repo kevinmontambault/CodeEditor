@@ -58,7 +58,7 @@ AddStyle(/*css*/`
         background-image: url('/static/img/ibeam.png');
         filter: invert(100%);
         left: -2px;
-        top: -6px;
+        top: -4px;
     }
 
     .onscreen-keyboard .key-row>div{
