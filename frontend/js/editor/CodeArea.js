@@ -165,12 +165,12 @@ export default class CodeArea extends HTMLElement{
             <textarea class="clipboard"></textarea>
 
             <div class="table-container">
-                <div class="row-window pointer-events"></div>
+                <div class="row-window"></div>
             </div>
 
-            <div class="scroll-gutter pointer-events">
+            <div class="scroll-gutter">
                 <div class="scroll-handle-container">
-                    <div class="scroll-handle pointer-events"></div>
+                    <div class="scroll-handle"></div>
                 </div>
             </div>
         `;
@@ -288,6 +288,7 @@ export default class CodeArea extends HTMLElement{
 
         // cursor selection and dragging
         this.addEventListener('pointerdown', downEvent => {
+            console.log(downEvent.offsetX, downEvent.offsetY)
             const downPosition = this.getPositionAt(downEvent.offsetX, downEvent.offsetY);
 
             // nothing was clicked

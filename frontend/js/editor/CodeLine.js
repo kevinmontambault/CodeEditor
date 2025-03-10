@@ -9,6 +9,7 @@ AddStyle(/*css*/`
         user-select: none;
         display: flex;
         align-items: center;
+        pointer-events: none;
     }
 
     .code-line.selected{
