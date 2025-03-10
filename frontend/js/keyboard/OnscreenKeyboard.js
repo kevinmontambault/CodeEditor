@@ -10,6 +10,14 @@ AddStyle(/*css*/`
         touch-action: none;
     }
 
+    .onscreen-keyboard.cursor-moving{
+        pointer-events: none;
+    }
+    
+    .center-container{
+        pointer-events: none;
+    }
+
     .onscreen-keyboard.cursor-moving .center-container{
         opacity: .2;
     }
@@ -35,6 +43,7 @@ AddStyle(/*css*/`
         background-image: url('/static/img/aero_arrow_l.cur');
         left: 0;
         top: 0;
+        pointer-events: none;
     }
 
     .onscreen-keyboard .cursor[type="auto"]{
@@ -96,7 +105,7 @@ AddStyle(/*css*/`
 `);
 
 function duplicateKeyboardEvent(event){
-    return Object.assign(new KeyboardEvent(event.type, {
+    return new KeyboardEvent(event.type, {
         timestamp:  event.timestamp,
         bubbles:    event.bubbles,
         cancelable: event.cancelable,
@@ -112,13 +121,13 @@ function duplicateKeyboardEvent(event){
         srcElement: event.srcElement,
         target:     event.target,
         repeat:     event.repeat,
-    }), {virtual:true});
+    });
 };
 
 function duplicateMouseEvent(event){
-    return Object.assign(new MouseEvent(event.type, {
+    return new MouseEvent(event.type, {
         
-    }), {virtual:true});
+    });
 };
 
 function hitTest(keyboard, x, y){
@@ -134,12 +143,13 @@ function hitTest(keyboard, x, y){
 };
 
 export default class OnscreenKeyboard extends HTMLElement{
-    static CLICK_MOVE_THRESH = 10;
-    static CLICK_HOLD_TIME = 300;
-    static DBL_CLICK_TIME = 300;
-    static KEY_LOCK_TIME = 300;
-    static HAPTIC_TIMEOUT = 150;
-    static MOVE_TIME_THRESH = 600;
+    static CLICK_MOVE_THRESH = 10;  // how many pixels the cursor must move in order to be considered a 'move' event instead of accidental user movement
+    static CLICK_HOLD_TIME   = 300; // how long a trackpad must be long-held to dispatch a 'mousedown' event
+    static DBL_CLICK_TIME    = 300; // how quickly the trackpad must be tapped to dispatch a 'dblclick' event
+    static KEY_LOCK_TIME     = 300; // how clickly a lockable key must be pressed before being 'locked' on
+    static HAPTIC_TIMEOUT    = 150; // how long a key must be pressed before a second 'key up' pulse is given
+    static MOVE_TIME_THRESH  = 600; // the window where 4 move events must be heard in order for a trackpad to be considered 'moving'
+    static SCROLL_TIMEOUT    = 150; // how long after a scroll it takes for a single-touch trackpad movement to be a cursor movement instead of a scroll
 
     static isElementFocusable(element){
         if(element.hasAttribute('tabindex')){
@@ -173,8 +183,6 @@ export default class OnscreenKeyboard extends HTMLElement{
 
         this.innerHTML = /*html*/`
             <div class="cursor" type="auto"></div>
-
-            <div></div>
 
             <div class="center-container flex-row">
                 <div class="left-touchpad touchpad"></div>
@@ -329,7 +337,7 @@ export default class OnscreenKeyboard extends HTMLElement{
 
         // reroute keyboard events to focused element
         const maybeDuplicateEvent = event => {
-            if(event.virtual){ return; }
+            if(!event.isTrusted){ return; }
             const newEvent = duplicateKeyboardEvent(event);
             this.focusedElement?.dispatchEvent(newEvent);
             if(newEvent.defaultPrevented){ event.preventDefault(); }
@@ -339,11 +347,32 @@ export default class OnscreenKeyboard extends HTMLElement{
 
         // whenever there is a pointerdown event, check if it was on any of the keyboard elements
         window.addEventListener('pointerdown', downEvent => {
-            if(downEvent.virtual){ return; }
+            if(!downEvent.isTrusted){ return; }
 
             const hitElement = hitTest(this, downEvent.clientX, downEvent.clientY);
-            if(hitElement){ hitElement.onHit(downEvent); }
+            if(hitElement){
+                hitElement.onHit(downEvent);
+
+                downEvent.preventDefault();
+                downEvent.stopImmediatePropagation();
+            }
+        }, true);
+
+        // release the key that was originally pressed by the pointer
+        window.addEventListener('pointerup', upEvent => {
+            if(!upEvent.isTrusted){ return; }
+
+            const keyElement = this.pressedKeyMap[upEvent.pointerId];
+            if(!keyElement){ return; }
+
+            delete this.pressedKeyMap[upEvent.pointerId];
+
+            this.releaseKeyElement(keyElement);
         });
+
+        // scroll state management
+        let scrolling = false;
+        let scrollTimeout = null;
 
         // cursor movement
         let heldCount = 0;
@@ -352,16 +381,15 @@ export default class OnscreenKeyboard extends HTMLElement{
         const touchpads = Array.from(this.querySelectorAll('.touchpad'));
         for(const touchpad of touchpads){
             touchpad.onHit = downEvent => {
-
+                
                 // its the first touchpad to be pressed
                 if(!heldCount){
                     cursorStart = {x:this.cursorPosition.x, y:this.cursorPosition.y};
                     cursorDelta = {x:0, y:0};
+                    scrolling   = false;
                     this.classList.add('cursor-moving');
                 }
                 heldCount += 1;
-
-                console.log(heldCount)
 
                 // keep timestamps of move events so it can be determined if the cursor is actively moving
                 const moveEvents = [0, 0, 0, 0];
@@ -369,7 +397,7 @@ export default class OnscreenKeyboard extends HTMLElement{
                 // only dispatch mousedown after brief hold
                 let   downTriggered = false;
                 const movementSum = {x:0, y:0};
-                const downTimeout = setTimeout(() => {
+                let   downTimeout = setTimeout(() => {
                     if(movementSum.x + movementSum.y < OnscreenKeyboard.CLICK_MOVE_THRESH){
                         this.mouseDown(downEvent.buttons);
                         movementSum.x = 0;
@@ -383,39 +411,51 @@ export default class OnscreenKeyboard extends HTMLElement{
 
                 // move cursor relative to starting position
                 const moveCallback = moveEvent => {
-                    console.log('move')
-                    if(moveEvent.virtual || moveEvent.pointerId !== downEvent.pointerId){ return; }
-
-                    // move cursor
-                    cursorDelta.x += moveEvent.movementX;
-                    cursorDelta.y += moveEvent.movementY;
-                    movementSum.x += Math.abs(moveEvent.movementX);
-                    movementSum.y += Math.abs(moveEvent.movementY);
+                    if(!moveEvent.isTrusted || moveEvent.pointerId !== downEvent.pointerId){ return; }
 
                     // add timestamps of move events so it can be determined if it's moving
                     moveEvents.push(performance.now());
                     moveEvents.shift();
                     touchpad.moving = performance.now()-moveEvents[0] < OnscreenKeyboard.MOVE_TIME_THRESH;
-                    console.log(touchpad.moving)
+                    
+                    // theres another touchpad flagged as moving, so perform a scroll action
+                    if(scrolling || touchpad.moving && touchpads.some(t => t.moving && t!==touchpad)){
+                        clearTimeout(downTimeout);
+                        downTimeout = null;
 
-                    if(touchpad.moving && touchpads.some(t => t.moving && t!==touchpad)){
-                        console.log('scroll')
+                        clearTimeout(scrollTimeout);
+                        scrolling = true;
+                        scrollTimeout = setTimeout(() => scrolling = false, OnscreenKeyboard.SCROLL_TIMEOUT);
+
+                        this.scroll(moveEvent.movementX, -moveEvent.movementY);
+                    }
+
+                    // no other touchpad is moving, so attempt to move the cursor
+                    else{
+                        cursorDelta.x += moveEvent.movementX;
+                        cursorDelta.y += moveEvent.movementY;
+                        movementSum.x += Math.abs(moveEvent.movementX);
+                        movementSum.y += Math.abs(moveEvent.movementY);
+
+                        // the cursor has moved enough to not be flagged as a click, so move the cursor
+                        if(movementSum.x + movementSum.y > OnscreenKeyboard.CLICK_MOVE_THRESH){
+                            cursorDelta.x += moveEvent.movementX;
+                            cursorDelta.y += moveEvent.movementY;
+                            movementSum.x += Math.abs(moveEvent.movementX);
+                            movementSum.y += Math.abs(moveEvent.movementY);
+    
+                            this.moveCursor(cursorStart.x+cursorDelta.x, cursorStart.y+cursorDelta.y);
+                        }
                     }
                     
-                    // no other touchpad is moving, so just move the cursor
-                    else if(movementSum.x + movementSum.y > OnscreenKeyboard.CLICK_MOVE_THRESH){
-                        this.moveCursor(cursorStart.x+cursorDelta.x, cursorStart.y+cursorDelta.y);
-                    }
-
                     moveEvent.stopImmediatePropagation();
                     moveEvent.preventDefault();
                 };
-                window.addEventListener('pointermove', moveCallback);
+                window.addEventListener('pointermove', moveCallback, true);
 
                 // when pointer is released
                 const upCallback = upEvent => {
-                    console.log('up')
-                    if(upEvent.virtual || upEvent.pointerId !== downEvent.pointerId){ return; }
+                    if(!upEvent.isTrusted || upEvent.pointerId !== downEvent.pointerId){ return; }
 
                     // clear the 'moving' flag
                     touchpad.moving = false;
@@ -423,14 +463,18 @@ export default class OnscreenKeyboard extends HTMLElement{
                     clearTimeout(downTimeout);
 
                     // remove callbacks
-                    window.removeEventListener('pointermove', moveCallback);
-                    window.removeEventListener('pointerup', upCallback);
+                    window.removeEventListener('pointermove', moveCallback, true);
+                    window.removeEventListener('pointerup', upCallback, true);
 
-                    // if the mousedown event was triggered, dispatch the accompanying mouseup event
-                    if(downTriggered){ this.mouseUp(upEvent.buttons); }
+                    // only attempt to dispatch an up or click event if the cursors werent scrolling
+                    if(!scrolling){
 
-                    // if the cursor didn't really move, AND the mouse wasn't held long enough to dispatch the mousedown event, dispatch a full click event
-                    else if(movementSum.x + movementSum.y < OnscreenKeyboard.CLICK_MOVE_THRESH){ window.requestAnimationFrame(() => this.click(upEvent.buttons)); }
+                        // if the mousedown event was triggered, dispatch the accompanying mouseup event
+                        if(downTriggered){ this.mouseUp(upEvent.buttons); }
+
+                        // if the cursor didn't really move, AND the mouse wasn't held long enough to dispatch the mousedown event, dispatch a full click event
+                        else if(movementSum.x + movementSum.y < OnscreenKeyboard.CLICK_MOVE_THRESH){ window.requestAnimationFrame(() => this.click(upEvent.buttons)); }
+                    }
 
                     heldCount -= 1;
                     if(!heldCount){ this.classList.remove('cursor-moving'); }
@@ -438,10 +482,7 @@ export default class OnscreenKeyboard extends HTMLElement{
                     upEvent.stopImmediatePropagation();
                     upEvent.preventDefault();
                 };
-                window.addEventListener('pointerup', upCallback);
-
-                downEvent.stopImmediatePropagation();
-                downEvent.preventDefault();
+                window.addEventListener('pointerup', upCallback, true);
             };
         }
 
@@ -486,9 +527,6 @@ export default class OnscreenKeyboard extends HTMLElement{
             keyElement.onHit = downEvent => {
                 this.pressedKeyMap[downEvent.pointerId] = keyElement;
                 this.pressKeyElement(keyElement);
-
-                downEvent.preventDefault();
-                downEvent.stopImmediatePropagation();
             };
 
             if(keyElement.hasAttribute('lockable')){
@@ -501,18 +539,6 @@ export default class OnscreenKeyboard extends HTMLElement{
         this.lastMouseDown = {timestamp:0, counter:0};
         this.lastMouseUp   = {timestamp:0, counter:0};
         this.lastClick     = {timestamp:0, counter:0};
-        
-        window.addEventListener('pointerup', upEvent => {
-            const keyElement = this.pressedKeyMap[upEvent.pointerId];
-            if(!keyElement){ return; }
-
-            delete this.pressedKeyMap[upEvent.pointerId];
-
-            this.releaseKeyElement(keyElement);
-
-            upEvent.preventDefault();
-            upEvent.stopImmediatePropagation();
-        });
     };
 
     pressKeyElement(keyElement){
@@ -579,20 +605,20 @@ export default class OnscreenKeyboard extends HTMLElement{
                 if(keyElement.repeat){
                     this.keyRepeatTimeout = setTimeout(function loop(){
                         navigator.vibrate(20);
-                        this.focusedElement.dispatchEvent(Object.assign(new KeyboardEvent('keydown', Object.assign({
+                        this.focusedElement.dispatchEvent(new KeyboardEvent('keydown', Object.assign({
                             timestamp: performance.now(),
                             repeat: true,
-                        }, downEventArgs)), {virtual:true}));
+                        }, downEventArgs)));
 
                         this.keyRepeatTimeout = setTimeout(loop.bind(this), 50);
                     }.bind(this), 500);
                 }
 
                 // dispatch keydown
-                this.focusedElement.dispatchEvent(Object.assign(new KeyboardEvent('keydown', Object.assign({
+                this.focusedElement.dispatchEvent(new KeyboardEvent('keydown', Object.assign({
                     timestamp: performance.now(),
                     repeat: false,
-                }, downEventArgs)), {virtual:true}));
+                }, downEventArgs)));
             }
         }
 
@@ -672,14 +698,14 @@ export default class OnscreenKeyboard extends HTMLElement{
         }
 
         if(this.focusedElement){
-            this.focusedElement.dispatchEvent(Object.assign(new KeyboardEvent('keyup', {
+            this.focusedElement.dispatchEvent(new KeyboardEvent('keyup', {
                 timestamp: performance.now(),
                 shiftKey: this.shiftHeld,
                 ctrlKey: this.ctrlHeld,
                 altKey: this.altHeld,
                 metaKey: this.metaHeld,
                 key: keyElement.key,
-            }), {virtual:true}));
+            }));
         }
     };
 
@@ -709,7 +735,7 @@ export default class OnscreenKeyboard extends HTMLElement{
             metaKey: this.metaHeld,
         };
         
-        element.dispatchEvent(Object.assign(new WheelEvent('wheel', eventArgs), {virtual:true}));
+        element.dispatchEvent(new WheelEvent('wheel', eventArgs));
     };
 
     shiftCursor(dx, dy){
@@ -752,8 +778,8 @@ export default class OnscreenKeyboard extends HTMLElement{
 
                 this.cursor.setAttribute('type', cursorStyle || 'auto');
     
-                element.dispatchEvent(Object.assign(new PointerEvent('pointerenter'), {virtual:true}));
-                element.dispatchEvent(Object.assign(new MouseEvent('mouseenter'), {virtual:true}));
+                element.dispatchEvent(new PointerEvent('pointerenter'));
+                element.dispatchEvent(new MouseEvent('mouseenter'));
             }else{
                 if(this.lastHoveredElement){
     
@@ -764,8 +790,8 @@ export default class OnscreenKeyboard extends HTMLElement{
                         curr = curr.parentNode;
                     }while(curr && (!element || !curr.contains(element)) && curr.classList);
     
-                    this.lastHoveredElement.dispatchEvent(Object.assign(new PointerEvent('pointerleave'), {virtual:true}));
-                    this.lastHoveredElement.dispatchEvent(Object.assign(new MouseEvent('mouseleave'), {virtual:true}));
+                    this.lastHoveredElement.dispatchEvent(new PointerEvent('pointerleave'));
+                    this.lastHoveredElement.dispatchEvent(new MouseEvent('mouseleave'));
                 }
     
                 if(element){
@@ -784,8 +810,8 @@ export default class OnscreenKeyboard extends HTMLElement{
 
                     this.cursor.setAttribute('type', cursorStyle || 'auto');
     
-                    element.dispatchEvent(Object.assign(new PointerEvent('pointerenter'), {virtual:true}));
-                    element.dispatchEvent(Object.assign(new MouseEvent('mouseenter'), {virtual:true}));
+                    element.dispatchEvent(new PointerEvent('pointerenter'));
+                    element.dispatchEvent(new MouseEvent('mouseenter'));
                 }
             }
         }
@@ -803,8 +829,8 @@ export default class OnscreenKeyboard extends HTMLElement{
                 screenY: window.screenTop + this.cursorPosition.y,
             };
             
-            element.dispatchEvent(Object.assign(new PointerEvent('pointermove', eventArgs), {virtual:true}));
-            element.dispatchEvent(Object.assign(new MouseEvent('mousemove', eventArgs), {virtual:true}));
+            element.dispatchEvent(new PointerEvent('pointermove', eventArgs));
+            element.dispatchEvent(new MouseEvent('mousemove', eventArgs));
         }
 
         this.lastHoveredElement = element;
@@ -846,8 +872,8 @@ export default class OnscreenKeyboard extends HTMLElement{
             view: window,
             detail: this.lastMouseDown.counter,
         };
-        elementAtPosition.dispatchEvent(Object.assign(new PointerEvent('pointerdown', downEventArgs), {virtual:true}));
-        elementAtPosition.dispatchEvent(Object.assign(new MouseEvent('mousedown', downEventArgs), {virtual:true}));
+        elementAtPosition.dispatchEvent(new PointerEvent('pointerdown', downEventArgs));
+        elementAtPosition.dispatchEvent(new MouseEvent('mousedown', downEventArgs));
 
         this.clickedButtonsMap[button] = elementAtPosition;
 
@@ -875,16 +901,16 @@ export default class OnscreenKeyboard extends HTMLElement{
             buttons: button,
             detail: this.lastMouseUp.counter,
         };
-        elementAtPosition.dispatchEvent(Object.assign(new PointerEvent('pointerup', upEventArgs), {virtual:true}));
-        elementAtPosition.dispatchEvent(Object.assign(new MouseEvent('mouseup', upEventArgs), {virtual:true}));
+        elementAtPosition.dispatchEvent(new PointerEvent('pointerup', upEventArgs));
+        elementAtPosition.dispatchEvent(new MouseEvent('mouseup', upEventArgs));
 
         // pointer down and up on the same element
         if(this.clickedButtonsMap[button] === elementAtPosition){
-            elementAtPosition.dispatchEvent(Object.assign(new MouseEvent('click', upEventArgs), {virtual:true}));
+            elementAtPosition.dispatchEvent(new MouseEvent('click', upEventArgs));
 
             // double click
             if(this.lastMouseUp.counter === 2){
-                elementAtPosition.dispatchEvent(Object.assign(new MouseEvent('dblclick', upEventArgs), {virtual:true}));
+                elementAtPosition.dispatchEvent(new MouseEvent('dblclick', upEventArgs));
             }
         }
 
@@ -901,12 +927,19 @@ export default class OnscreenKeyboard extends HTMLElement{
             clientY: this.cursorPosition.y,
         };
 
-        elementAtPosition.dispatchEvent(Object.assign(new MouseEvent('contextmenu', contextArgs), {virtual:true}));
+        elementAtPosition.dispatchEvent(new MouseEvent('contextmenu', contextArgs));
         return true;
     };
 
     getElementUnderCursor(){
-        return document.elementFromPoint(this.cursorPosition.x, this.cursorPosition.y) || null;
+        if(this.classList.contains('cursor-moving')){
+            return document.elementFromPoint(this.cursorPosition.x, this.cursorPosition.y) || null;
+        }else{
+            this.classList.add('cursor-moving');
+            const element = document.elementFromPoint(this.cursorPosition.x, this.cursorPosition.y) || null;
+            this.classList.remove('cursor-moving');
+            return element;
+        }
     };
 
     get shiftHeld(){
