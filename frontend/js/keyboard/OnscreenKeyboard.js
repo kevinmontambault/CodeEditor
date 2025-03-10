@@ -7,7 +7,6 @@ AddStyle(/*css*/`
         z-index: 999;
         font-size: .8rem;
         bottom: 0;
-        touch-action: none;
     }
 
     .onscreen-keyboard.cursor-moving{
@@ -465,6 +464,7 @@ export default class OnscreenKeyboard extends HTMLElement{
 
                     // remove callbacks
                     window.removeEventListener('pointermove', moveCallback, true);
+                    window.removeEventListener('pointercancel', upCallback, true);
                     window.removeEventListener('pointerup', upCallback, true);
 
                     // only attempt to dispatch an up or click event if the cursors werent scrolling
@@ -483,6 +483,7 @@ export default class OnscreenKeyboard extends HTMLElement{
                     upEvent.stopImmediatePropagation();
                     upEvent.preventDefault();
                 };
+                window.addEventListener('pointercancel', upCallback, true);
                 window.addEventListener('pointerup', upCallback, true);
             };
         }

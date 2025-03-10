@@ -182,7 +182,7 @@ export default class CodeArea extends HTMLElement{
         this._fontFamily = null;
         this._fontSize   = 0;
         this._fontWidth  = 0;
-        this._lineHeight = 0;
+        this._lineHeight = 1;
         
         this._rowWindow      = this.querySelector('.row-window');
         this._scrollHandle   = this.querySelector('.scroll-handle');
@@ -341,9 +341,15 @@ export default class CodeArea extends HTMLElement{
     };
 
     set lineHeight(height){
-        this._lineHeight = height;
+        
+        // maintain scroll position
+        const oldScrollLine = this._renderedState.scrollPosition / this._lineHeight;
 
+        this._lineHeight = height;
         for(const row of this._lines){ row.style.height = `${height}px`; }
+        
+        this.scrollTo(oldScrollLine*height, false);
+        
         reload(this, true);
         return height;
     };
@@ -587,10 +593,15 @@ export default class CodeArea extends HTMLElement{
     };
 
     // scrolls to a position on the table
-    scrollTo(y){
+    scrollTo(y, animate=true){
         this._queuedState.scrollTarget = Math.min(Math.max(0, y), Math.max(0, this._lines.length*this._lineHeight - this._tableContainer.offsetHeight));
 
-        if(!this._scrollLoop){
+        if(!animate){
+            this._queuedState.scrollPosition = this._queuedState.scrollTarget;
+            reload(this);
+        }
+
+        else if(!this._scrollLoop){
             this._scrollLoop = requestAnimationFrame(function scrollLoop(){
                 const delta = this._queuedState.scrollTarget - this._queuedState.scrollPosition;
 
