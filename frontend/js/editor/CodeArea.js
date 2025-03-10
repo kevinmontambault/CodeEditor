@@ -342,12 +342,14 @@ export default class CodeArea extends HTMLElement{
 
     set lineHeight(height){
         
-        // maintain scroll position
+        // store the line that was previously scrolled to, so it can be scrolled back to when the font size changes
         const oldScrollLine = this._renderedState.scrollPosition / this._lineHeight;
 
+        // actually change line size
         this._lineHeight = height;
         for(const row of this._lines){ row.style.height = `${height}px`; }
         
+        // scroll to old position
         this.scrollTo(oldScrollLine*height, false);
         
         reload(this, true);
