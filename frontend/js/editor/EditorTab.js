@@ -117,6 +117,10 @@ export default class EditorTab extends HTMLElement{
         return true;
     };
 
+    loadSession(sessionInfo){
+        this.context.scrollTo(sessionInfo.position);
+    };
+
     get sessionInfo(){
         return {
             name: this.name,

@@ -50,10 +50,6 @@ import {
     save
 } from './Commands.js';
 
-function createInsertText(letter){
-    return editor => overwriteText(editor, letter);
-};
-
 // standard key presses
 export default {
     'Backspace': deleteSelectionBackwards,

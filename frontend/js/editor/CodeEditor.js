@@ -25,6 +25,14 @@ AddStyle(/*css*/`
         gap: 1px;
         background-color: var(--tab-border);
     }
+
+    .code-editor .footer{
+        background-color: var(--editor-selectionBackground);
+        color: var(--editorLineNumber-activeForeground);
+        font-size: .8em;
+        padding: 2 4px;
+        height: 18px;
+    }
 `);
 
 export class CodeEditor extends HTMLElement{
@@ -42,7 +50,9 @@ export class CodeEditor extends HTMLElement{
             
             <div class="file-content flex-fill flex-row relative"></div>
 
-            <div class="footer flex-row"></div>
+            <div class="footer flex-row">
+                <div class="selection-info"></div>
+            </div>
         `;
 
         instanceResolver(this);
@@ -55,13 +65,28 @@ export class CodeEditor extends HTMLElement{
 
         // see if the file is already open
         const existingTab = EditorTab.getTabByPath(filePath);
-        if(existingTab){ return existingTab.active = true; }
+        if(existingTab){
+            existingTab.active = true;
+            return existingTab;
+        }
 
         // create a new tab and editor context
         const context = new CodeArea(fileName, filePath);
 
         // update local file content cache when saved
         context.addEventListener('save', () => this.fileContentCache.set(filePath, context.text));
+
+        // update status bar
+        const selectionInfo = this.querySelector('.selection-info');
+        context.addEventListener('select', () => {
+            if(context.ranges.length === 1){
+                if(context.ranges[0].isEmpty){
+                    selectionInfo.innerText = `Ln ${context.ranges[0].start.line}, Col ${context.ranges[0].start.col}`;
+                }else{
+                    selectionInfo.innerText = `Ln ${context.ranges[0].start.line}, Col ${context.ranges[0].start.col} (${context.ranges[0].length} Selected)`;
+                }
+            }
+        });
 
         if(this.fileContentCache.has(filePath)){
             context.setText(this.fileContentCache.get(filePath));
@@ -86,7 +111,7 @@ export class CodeEditor extends HTMLElement{
         this.querySelector('.tab-container').appendChild(tab);
         this.querySelector('.file-content').appendChild(context);
 
-        return true;
+        return tab;
     };
 };
 customElements.define('code-editor', CodeEditor);

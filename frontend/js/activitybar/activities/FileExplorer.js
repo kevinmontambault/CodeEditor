@@ -172,11 +172,16 @@ export default class FileExplorer extends HTMLElement{
         this.root = directory;
 
         const sessionInfo = Sessions.load(this.root);
-        console.log(sessionInfo)
         if(sessionInfo){
-            for(const tab of sessionInfo.tabs){
-                (await CodeEditor).openFile(tab.name, tab.path);
-            }
+            const editor = await CodeEditor;
+            
+            console.log(sessionInfo)
+
+            const tabs = await Promise.all(sessionInfo.tabs.map(async tabInfo => {
+                const editorTab = await editor.openFile(tabInfo.name, tabInfo.path);
+                editorTab.loadSession(tabInfo);
+                return editorTab;
+            }));
         }
     };
     

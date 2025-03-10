@@ -17,17 +17,6 @@ AddStyle(/*css*/`
         cursor: text;
     }
 
-    .code-area .clipboard{
-        position: 'absolute';
-        left: 0;
-        top: 0;
-        border: 'none';
-        width: 0;
-        height: 0;
-        padding: 0;
-        margin: 0;
-    }
-
     .code-area .table-container{
         position: relative;
         overflow: hidden;
@@ -162,8 +151,6 @@ export default class CodeArea extends HTMLElement{
         this.toggleAttribute('focusable', true);
 
         this.innerHTML = /*html*/`
-            <textarea class="clipboard"></textarea>
-
             <div class="table-container">
                 <div class="row-window"></div>
             </div>
@@ -203,6 +190,7 @@ export default class CodeArea extends HTMLElement{
         this.actionPointer = 0;
         this.actionStack = [];
         this._deltaStack = [];
+        this._deltas = null; // cached minimized deltas
         this.ranges = [];
         
         // scrolling with wheel
@@ -337,7 +325,7 @@ export default class CodeArea extends HTMLElement{
             console.log(shortcutCode)
         });
 
-        this.setFont("'Cascadia Mono', monospace", 8);
+        this.setFont("'Cascadia Mono', monospace", 14);
     };
 
     set lineHeight(height){
@@ -416,8 +404,12 @@ export default class CodeArea extends HTMLElement{
     };
 
     deleteRanges(ranges, shiftSelections){
-        const deleteRanges = SelectionRange.mergeAndSortRanges(ranges);
+        const deleteRanges = SelectionRange.mergeAndSortRanges(ranges).filter(range => !range.isEmpty);
         const lineRanges = deleteRanges.map(range => range.getPerLineSelectionRanges()).flat().reverse();
+
+        // update delta stack
+        for(const range of deleteRanges){ this._deltaStack.push(['D', range.start.getDocPosition(), range.length]); }
+        this._deltas = null;
 
         // stash old selection starts before the document is invalidated
         const oldSelectionStartPositions = shiftSelections.map(selection => selection.start.getDocPosition());
@@ -476,6 +468,9 @@ export default class CodeArea extends HTMLElement{
 
         for(const [position, text] of insertions.toReversed()){
             const line = this.lines[position.line];
+
+            this._deltaStack.push(['I', position.getDocPosition(), text]);
+            this._deltas = null;
 
             const textLines = text.split('\n');
             if(textLines.length === 1){
@@ -578,6 +573,8 @@ export default class CodeArea extends HTMLElement{
 
         for(const range of ranges){ range.render(); }
         this.ranges = ranges;
+
+        this.dispatchEvent(new Event('select'));
     };
 
     setSelectionRanges(ranges){
@@ -636,10 +633,8 @@ export default class CodeArea extends HTMLElement{
         let newRanges = command.ranges ? SelectionRange.mergeAndSortRanges(command.ranges) : null;
 
         if(command.delete?.length){
-            this._deltaStack.push({type:'d', ranges:command.delete.map(range => [range.start.getDocPosition(), range.length])});
             newRanges = this.deleteRanges(command.delete, newRanges||this.ranges);
         }else if(command.insert?.length){
-            this._deltaStack.push({type:'i', texts:command.insert.map(([position, text]) => [position.getDocPosition(), text])});
             newRanges = this.insertText(command.insert, newRanges||this.ranges);
         }
 
@@ -680,27 +675,51 @@ export default class CodeArea extends HTMLElement{
     };
     
     get deltas(){
-        const deltas = [];
-        for(const delta of this._deltaStack){
-            if(delta.type === 'd'){
-                let offsetSum = 0;
-                for(const [position, length] of delta.ranges){
-                    if(!length){ continue; }
-                    deltas.push(`D${position-offsetSum},${length}`);
-                    offsetSum += length;
-                }
-            }
-            
-            else if(delta.type === 'i'){
-                let offsetSum = 0;
-                for(const [position, text] of delta.texts){
-                    deltas.push(`I${position+offsetSum},${text}`);
-                    offsetSum += text.length;
-                }
-            }
-        }
+        if(this._deltas){ return this._deltas; }
 
-        return deltas;
+        let oldLength;
+        do{
+            oldLength = this._deltaStack.length;
+
+            // consecutive inserts
+            for(let i=0; i<this._deltaStack.length-1; i++){
+                if(this._deltaStack[i][0] !== 'I'){ continue; }
+                if(this._deltaStack[i+1][0] !== 'I'){ continue; }
+
+                // next text is inserted directly after this one
+                if(this._deltaStack[i][1]+this._deltaStack[i][2].length === this._deltaStack[i+1][1]){
+                    this._deltaStack[i][2] = this._deltaStack[i][2] + this._deltaStack[i+1][2];
+                    this._deltaStack.splice((i--)+1, 1);
+                }
+                
+                // next text is inserted directly before this one
+                else if(this._deltaStack[i][1] === this._deltaStack[i+1][1]){
+                    this._deltaStack[i][2] = this._deltaStack[i+1][2] + this._deltaStack[i][2];
+                    this._deltaStack.splice((i--)+1, 1);
+                }
+            };
+
+            // consecutive deletes
+            for(let i=0; i<this._deltaStack.length-1; i++){
+                if(this._deltaStack[i][0] !== 'D'){ continue; }
+                if(this._deltaStack[i+1][0] !== 'D'){ continue; }
+
+                // text is deleted directly after this delete
+                if(this._deltaStack[i][1] === this._deltaStack[i+1][1]){
+                    this._deltaStack[i][2] += this._deltaStack[i+1][2];
+                    this._deltaStack.splice((i--)+1, 1);
+                }
+                
+                // text is deleted directly before this delete
+                else if(this._deltaStack[i][1] === this._deltaStack[i+1][1]+this._deltaStack[i+1][2]){
+                    this._deltaStack[i][1] = this._deltaStack[i+1][1];
+                    this._deltaStack[i][2] += this._deltaStack[i+1][2];
+                    this._deltaStack.splice((i--)+1, 1);
+                }
+            };
+        }while(oldLength !== this._deltaStack.length);
+
+        return this._deltas = this._deltaStack.map(([type, position, arg]) => `${type}${position},${arg}`);
     };
 
     get lines(){
