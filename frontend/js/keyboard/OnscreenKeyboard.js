@@ -143,13 +143,14 @@ function hitTest(keyboard, x, y){
 };
 
 export default class OnscreenKeyboard extends HTMLElement{
-    static CLICK_MOVE_THRESH = 10;  // how many pixels the cursor must move in order to be considered a 'move' event instead of accidental user movement
-    static CLICK_HOLD_TIME   = 300; // how long a trackpad must be long-held to dispatch a 'mousedown' event
-    static DBL_CLICK_TIME    = 300; // how quickly the trackpad must be tapped to dispatch a 'dblclick' event
-    static KEY_LOCK_TIME     = 300; // how clickly a lockable key must be pressed before being 'locked' on
-    static HAPTIC_TIMEOUT    = 150; // how long a key must be pressed before a second 'key up' pulse is given
-    static MOVE_TIME_THRESH  = 600; // the window where 4 move events must be heard in order for a trackpad to be considered 'moving'
-    static SCROLL_TIMEOUT    = 150; // how long after a scroll it takes for a single-touch trackpad movement to be a cursor movement instead of a scroll
+    static CLICK_MOVE_THRESH  = 10;  // how many pixels the cursor must move in order to be considered a 'move' event instead of accidental user movement
+    static CLICK_HOLD_TIME    = 300; // how long a trackpad must be long-held to dispatch a 'mousedown' event
+    static DBL_CLICK_TIME     = 300; // how quickly the trackpad must be tapped to dispatch a 'dblclick' event
+    static KEY_LOCK_TIME      = 300; // how clickly a lockable key must be pressed before being 'locked' on
+    static HAPTIC_TIMEOUT     = 150; // how long a key must be pressed before a second 'key up' pulse is given
+    static MOVE_TIME_THRESH   = 600; // the window where 4 move events must be heard in order for a trackpad to be considered 'moving'
+    static SCROLL_TIMEOUT     = 150; // how long after a scroll it takes for a single-touch trackpad movement to be a cursor movement instead of a scroll
+    static SCROLL_DIRECTION_Y = 1;   // whether the window scrolls up or down whether the user moves the trackpad up or down
 
     static isElementFocusable(element){
         if(element.hasAttribute('tabindex')){
@@ -427,7 +428,7 @@ export default class OnscreenKeyboard extends HTMLElement{
                         scrolling = true;
                         scrollTimeout = setTimeout(() => scrolling = false, OnscreenKeyboard.SCROLL_TIMEOUT);
 
-                        this.scroll(moveEvent.movementX, -moveEvent.movementY);
+                        this.scroll(moveEvent.movementX, OnscreenKeyboard.SCROLL_DIRECTION_Y * moveEvent.movementY);
                     }
 
                     // no other touchpad is moving, so attempt to move the cursor
