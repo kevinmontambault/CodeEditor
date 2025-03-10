@@ -51,3 +51,22 @@ module.exports.validatePath = root => filePath => {
     if(fullPath.startsWith(rootPath)){ return fullPath; }
     return null;
 };
+
+module.exports.getIPv4Address = () => {
+    const networkInterfaces = require('os').networkInterfaces;
+
+    const nets = networkInterfaces();
+
+    const results = {};
+    for(const name of Object.keys(nets)){
+        for(const net of nets[name]){
+            const familyV4Value = typeof net.family === 'string' ? 'IPv4' : 4
+            if(net.family === familyV4Value && !net.internal){
+                if(!results[name]){ results[name] = []; }
+                results[name].push(net.address);
+            }
+        }
+    }
+
+    return results;
+};

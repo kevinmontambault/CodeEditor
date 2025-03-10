@@ -10,14 +10,6 @@ AddStyle(/*css*/`
         touch-action: none;
     }
 
-    .onscreen-keyboard.cursor-moving .key-row>div{
-        pointer-events: none;
-    }
-
-    .onscreen-keyboard.cursor-moving .touchpad{
-        pointer-events: none;
-    }
-
     .onscreen-keyboard.cursor-moving .center-container{
         opacity: .2;
     }
@@ -68,7 +60,6 @@ AddStyle(/*css*/`
         align-items: center;
         justify-content: center;
         user-select: none;
-        pointer-events: all;
         box-sizing: border-box;
         opacity: 0.6;
         font-size: 2vw;
@@ -99,7 +90,6 @@ AddStyle(/*css*/`
 
     .onscreen-keyboard .touchpad{
         position: relative;
-        pointer-events: all;
         opacity: 0.6;
         width: 8vw;
     }
@@ -131,12 +121,25 @@ function duplicateMouseEvent(event){
     }), {virtual:true});
 };
 
+function hitTest(keyboard, x, y){
+    for(const touchpad of keyboard.querySelectorAll('.touchpad')){
+        const rect = touchpad.getBoundingClientRect();
+        if(rect.top<=y && rect.bottom>=y && rect.left<=x && rect.right>=x){ return touchpad; }
+    }
+    
+    for(const key of keyboard.querySelectorAll('.key-row>div')){
+        const rect = key.getBoundingClientRect();
+        if(rect.top<=y && rect.bottom>=y && rect.left<=x && rect.right>=x){ return key; }
+    }
+};
+
 export default class OnscreenKeyboard extends HTMLElement{
     static CLICK_MOVE_THRESH = 10;
     static CLICK_HOLD_TIME = 300;
     static DBL_CLICK_TIME = 300;
     static KEY_LOCK_TIME = 300;
     static HAPTIC_TIMEOUT = 150;
+    static MOVE_TIME_THRESH = 600;
 
     static isElementFocusable(element){
         if(element.hasAttribute('tabindex')){
@@ -334,13 +337,21 @@ export default class OnscreenKeyboard extends HTMLElement{
         window.addEventListener('keydown', maybeDuplicateEvent);
         window.addEventListener('keyup',   maybeDuplicateEvent);
 
+        // whenever there is a pointerdown event, check if it was on any of the keyboard elements
+        window.addEventListener('pointerdown', downEvent => {
+            if(downEvent.virtual){ return; }
+
+            const hitElement = hitTest(this, downEvent.clientX, downEvent.clientY);
+            if(hitElement){ hitElement.onHit(downEvent); }
+        });
+
         // cursor movement
         let heldCount = 0;
         let cursorStart = null;
         let cursorDelta = null;
-        for(const touchpad of this.querySelectorAll('.touchpad')){
-            touchpad.addEventListener('pointerdown', downEvent => {
-                if(!downEvent.isTrusted){ return; }
+        const touchpads = Array.from(this.querySelectorAll('.touchpad'));
+        for(const touchpad of touchpads){
+            touchpad.onHit = downEvent => {
 
                 // its the first touchpad to be pressed
                 if(!heldCount){
@@ -349,6 +360,11 @@ export default class OnscreenKeyboard extends HTMLElement{
                     this.classList.add('cursor-moving');
                 }
                 heldCount += 1;
+
+                console.log(heldCount)
+
+                // keep timestamps of move events so it can be determined if the cursor is actively moving
+                const moveEvents = [0, 0, 0, 0];
 
                 // only dispatch mousedown after brief hold
                 let   downTriggered = false;
@@ -367,14 +383,27 @@ export default class OnscreenKeyboard extends HTMLElement{
 
                 // move cursor relative to starting position
                 const moveCallback = moveEvent => {
-                    if(!moveEvent.isTrusted || moveEvent.pointerId !== downEvent.pointerId){ return; }
+                    console.log('move')
+                    if(moveEvent.virtual || moveEvent.pointerId !== downEvent.pointerId){ return; }
 
+                    // move cursor
                     cursorDelta.x += moveEvent.movementX;
                     cursorDelta.y += moveEvent.movementY;
                     movementSum.x += Math.abs(moveEvent.movementX);
                     movementSum.y += Math.abs(moveEvent.movementY);
 
-                    if(movementSum.x + movementSum.y > OnscreenKeyboard.CLICK_MOVE_THRESH){
+                    // add timestamps of move events so it can be determined if it's moving
+                    moveEvents.push(performance.now());
+                    moveEvents.shift();
+                    touchpad.moving = performance.now()-moveEvents[0] < OnscreenKeyboard.MOVE_TIME_THRESH;
+                    console.log(touchpad.moving)
+
+                    if(touchpad.moving && touchpads.some(t => t.moving && t!==touchpad)){
+                        console.log('scroll')
+                    }
+                    
+                    // no other touchpad is moving, so just move the cursor
+                    else if(movementSum.x + movementSum.y > OnscreenKeyboard.CLICK_MOVE_THRESH){
                         this.moveCursor(cursorStart.x+cursorDelta.x, cursorStart.y+cursorDelta.y);
                     }
 
@@ -385,7 +414,11 @@ export default class OnscreenKeyboard extends HTMLElement{
 
                 // when pointer is released
                 const upCallback = upEvent => {
-                    if(!upEvent.isTrusted || upEvent.pointerId !== downEvent.pointerId){ return; }
+                    console.log('up')
+                    if(upEvent.virtual || upEvent.pointerId !== downEvent.pointerId){ return; }
+
+                    // clear the 'moving' flag
+                    touchpad.moving = false;
 
                     clearTimeout(downTimeout);
 
@@ -409,7 +442,7 @@ export default class OnscreenKeyboard extends HTMLElement{
 
                 downEvent.stopImmediatePropagation();
                 downEvent.preventDefault();
-            });
+            };
         }
 
         this.capsableKeys  = Array.from(this.querySelectorAll('div[caps]'));
@@ -450,13 +483,13 @@ export default class OnscreenKeyboard extends HTMLElement{
             keyElement.style.aspectRatio = width;
 
             // listen for key presses
-            keyElement.addEventListener('pointerdown', downEvent => {
+            keyElement.onHit = downEvent => {
                 this.pressedKeyMap[downEvent.pointerId] = keyElement;
                 this.pressKeyElement(keyElement);
 
                 downEvent.preventDefault();
                 downEvent.stopImmediatePropagation();
-            });
+            };
 
             if(keyElement.hasAttribute('lockable')){
                 keyElement.lockable = true;
@@ -486,7 +519,8 @@ export default class OnscreenKeyboard extends HTMLElement{
         keyElement.classList.add('pressed');
         keyElement.pressedCount += 1;
 
-        navigator.vibrate(20);
+        try{ navigator.vibrate(20); }
+        catch(err){}
 
         // a new key was pressed, so remove the old repeat timeout
         if(this.keyRepeatTimeout){
@@ -653,6 +687,29 @@ export default class OnscreenKeyboard extends HTMLElement{
         const keyElement = this.keyMap[keyCode];
         if(!keyElement){ throw new Error(`No such key '${keyCode}'`); }
         this.releaseKeyElement(keyElement);
+    };
+
+    scroll(deltaX, deltaY){
+        const element = this.getElementUnderCursor();
+        if(!element){ return; }
+
+        const eventArgs = {
+            bubbles: true,
+            cancelable: true,
+            deltaMode: 0,
+            deltaX,
+            deltaY,
+            clientX: this.cursorPosition.x,
+            clientY: this.cursorPosition.y,
+            screenX: window.screenLeft + this.cursorPosition.x,
+            screenY: window.screenTop + this.cursorPosition.y,
+            altKey: this.altHeld,
+            ctrlKey: this.ctrlHeld,
+            shiftKey: this.shiftHeld,
+            metaKey: this.metaHeld,
+        };
+        
+        element.dispatchEvent(Object.assign(new WheelEvent('wheel', eventArgs), {virtual:true}));
     };
 
     shiftCursor(dx, dy){
@@ -849,14 +906,7 @@ export default class OnscreenKeyboard extends HTMLElement{
     };
 
     getElementUnderCursor(){
-        if(this.classList.contains('cursor-moving')){
-            return document.elementFromPoint(this.cursorPosition.x, this.cursorPosition.y) || null;
-        }else{
-            this.classList.add('cursor-moving');
-            const elementAt = document.elementFromPoint(this.cursorPosition.x, this.cursorPosition.y) || null;
-            this.classList.remove('cursor-moving');
-            return elementAt;
-        }
+        return document.elementFromPoint(this.cursorPosition.x, this.cursorPosition.y) || null;
     };
 
     get shiftHeld(){
