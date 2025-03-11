@@ -375,11 +375,13 @@ export default class OnscreenKeyboard extends HTMLElement{
         let scrollTimeout = null;
 
         // cursor movement
+        let movingCount = 0;
         let heldCount = 0;
         let cursorStart = null;
         let cursorDelta = null;
-        const touchpads = Array.from(this.querySelectorAll('.touchpad'));
-        for(const touchpad of touchpads){
+        for(const touchpad of this.querySelectorAll('.touchpad')){
+            touchpad.moving = false;
+
             touchpad.onHit = downEvent => {
                 
                 // its the first touchpad to be pressed
@@ -416,10 +418,17 @@ export default class OnscreenKeyboard extends HTMLElement{
                     // add timestamps of move events so it can be determined if it's moving
                     moveEvents.push(performance.now());
                     moveEvents.shift();
-                    touchpad.moving = performance.now()-moveEvents[0] < OnscreenKeyboard.MOVE_TIME_THRESH;
+
+                    // update moving state and movingCount
+                    const moving = performance.now()-moveEvents[0] < OnscreenKeyboard.MOVE_TIME_THRESH;
+                    if(moving !== touchpad.moving){
+                        if(moving){ movingCount += 1; }
+                        else{ movingCount -= 1; }
+                        touchpad.moving = moving;
+                    }
                     
                     // theres another touchpad flagged as moving, so perform a scroll action
-                    if(scrolling || touchpad.moving && touchpads.some(t => t.moving && t!==touchpad)){
+                    if(scrolling || touchpad.moving && movingCount >= 2){
                         clearTimeout(downTimeout);
                         downTimeout = null;
 
@@ -458,7 +467,10 @@ export default class OnscreenKeyboard extends HTMLElement{
                     if(!upEvent.isTrusted || upEvent.pointerId !== downEvent.pointerId){ return; }
 
                     // clear the 'moving' flag
-                    touchpad.moving = false;
+                    if(touchpad.moving){
+                        touchpad.moving = false;
+                        movingCount -= 1;
+                    }
 
                     clearTimeout(downTimeout);
 
