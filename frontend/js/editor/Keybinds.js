@@ -41,7 +41,6 @@ import {
     overwriteNewline,
     insertNewlineUp,
     insertNewlineDown,
-    overwriteText,
     undo,
     redo,
     copySelection,
@@ -115,11 +114,13 @@ export default {
     'Ctrl+KeyC': copySelection,
     'Ctrl+KeyV': paste,
 
-    // 'Ctrl+KeyZ': undo,
+    'Ctrl+KeyZ': undo,
     'Ctrl+Shift+KeyZ': redo,
 
     // keyboard specific binds
     'Save': save,
+    'Undo': undo,
+    'Redo': redo,
     'Copy': copySelection,
     'Cut': cutSelection,
     'Paste': paste,

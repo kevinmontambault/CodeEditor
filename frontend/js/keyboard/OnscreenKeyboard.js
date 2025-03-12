@@ -149,6 +149,7 @@ export default class OnscreenKeyboard extends HTMLElement{
     static HAPTIC_TIMEOUT     = 150; // how long a key must be pressed before a second 'key up' pulse is given
     static MOVE_TIME_THRESH   = 600; // the window where 4 move events must be heard in order for a trackpad to be considered 'moving'
     static SCROLL_TIMEOUT     = 150; // how long after a scroll it takes for a single-touch trackpad movement to be a cursor movement instead of a scroll
+    static KEY_PRESS_DELAY    = 50;  // how long after a keypress the keypress is acknowledged instead of being considered a potential mouse movement
     static SCROLL_DIRECTION_Y = 1;   // whether the window scrolls up or down whether the user moves the trackpad up or down
 
     static isElementFocusable(element){
@@ -197,9 +198,9 @@ export default class OnscreenKeyboard extends HTMLElement{
                         <div data-code="ZoomIn"                  width="1.36"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Zm-40-60v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg></div>
                         <div data-code="ZoomOut"                 width="1.36"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400ZM280-540v-80h200v80H280Z"/></svg></div>
                         <div data-code=""                 noemit width="1.36"></div>
-                        <div data-code=""                 noemit width="1.36"></div>
-                        <div data-code=""                 noemit width="1.36"></div>
                         <div data-code="Save"                    width="1.36"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM480-240q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z"/></svg></div>
+                        <div data-code="Redo"                    width="1.36"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M396-200q-97 0-166.5-63T160-420q0-94 69.5-157T396-640h252L544-744l56-56 200 200-200 200-56-56 104-104H396q-63 0-109.5 40T240-420q0 60 46.5 100T396-280h284v80H396Z"/></svg></div>
+                        <div data-code="Undo"                    width="1.36"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M280-200v-80h284q63 0 109.5-40T720-420q0-60-46.5-100T564-560H312l104 104-56 56-200-200 200-200 56 56-104 104h252q97 0 166.5 63T800-420q0 94-69.5 157T564-200H280Z"/></svg></div>
                         <div data-code="Copy"                    width="1.36"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"/></svg></div>
                         <div data-code="Cut"                     width="1.36"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M760-120 480-400l-94 94q8 15 11 32t3 34q0 66-47 113T240-80q-66 0-113-47T80-240q0-66 47-113t113-47q17 0 34 3t32 11l94-94-94-94q-15 8-32 11t-34 3q-66 0-113-47T80-720q0-66 47-113t113-47q66 0 113 47t47 113q0 17-3 34t-11 32l494 494v40H760ZM600-520l-80-80 240-240h120v40L600-520ZM240-640q33 0 56.5-23.5T320-720q0-33-23.5-56.5T240-800q-33 0-56.5 23.5T160-720q0 33 23.5 56.5T240-640Zm240 180q8 0 14-6t6-14q0-8-6-14t-14-6q-8 0-14 6t-6 14q0 8 6 14t14 6ZM240-160q33 0 56.5-23.5T320-240q0-33-23.5-56.5T240-320q-33 0-56.5 23.5T160-240q0 33 23.5 56.5T240-160Z"/></svg></div>
                         <div data-code="Paste"                   width="1.36"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h167q11-35 43-57.5t70-22.5q40 0 71.5 22.5T594-840h166q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560h-80v120H280v-120h-80v560Zm280-560q17 0 28.5-11.5T520-800q0-17-11.5-28.5T480-840q-17 0-28.5 11.5T440-800q0 17 11.5 28.5T480-760Z"/></svg></div>
@@ -539,8 +540,35 @@ export default class OnscreenKeyboard extends HTMLElement{
 
             // listen for key presses
             keyElement.onHit = downEvent => {
-                this.pressedKeyMap[downEvent.pointerId] = keyElement;
-                this.pressKeyElement(keyElement);
+                let movementSum = 0;
+
+                const checkMovementThreshold = () => {
+                    if(movementSum < OnscreenKeyboard.CLICK_MOVE_THRESH){
+                        this.pressedKeyMap[downEvent.pointerId] = keyElement;
+                        this.pressKeyElement(keyElement);
+                    }
+                    
+                    window.removeEventListener('pointermove', moveCallback, true);
+                    window.removeEventListener('pointerup', upCallback, {once:true});
+                    clearTimeout(pressTimeout);
+                };
+
+                const pressTimeout = setTimeout(checkMovementThreshold, OnscreenKeyboard.KEY_PRESS_DELAY);
+
+                const moveCallback = moveEvent => {
+                    movementSum += Math.abs(moveEvent.movementX) + Math.abs(moveEvent.movementY);
+                    if(movementSum > OnscreenKeyboard.CLICK_MOVE_THRESH){
+                        clearTimeout(pressTimeout);
+                        window.removeEventListener('pointermove', moveCallback, true);
+                        window.removeEventListener('pointerup', upCallback, {once:true});
+                    }
+                    console.log('move')
+                };
+
+                const upCallback = upEvent => checkMovementThreshold;
+                
+                window.addEventListener('pointermove', moveCallback, true);
+                window.addEventListener('pointerup', upCallback, {once:true});
             };
 
             if(keyElement.hasAttribute('lockable')){
