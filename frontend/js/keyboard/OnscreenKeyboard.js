@@ -149,7 +149,7 @@ export default class OnscreenKeyboard extends HTMLElement{
     static HAPTIC_TIMEOUT     = 150; // how long a key must be pressed before a second 'key up' pulse is given
     static MOVE_TIME_THRESH   = 600; // the window where 4 move events must be heard in order for a trackpad to be considered 'moving'
     static SCROLL_TIMEOUT     = 150; // how long after a scroll it takes for a single-touch trackpad movement to be a cursor movement instead of a scroll
-    static KEY_PRESS_DELAY    = 50;  // how long after a keypress the keypress is acknowledged instead of being considered a potential mouse movement
+    static KEY_PRESS_DELAY    = 150; // how long after a keypress the keypress is acknowledged instead of being considered a potential mouse movement
     static SCROLL_DIRECTION_Y = 1;   // whether the window scrolls up or down whether the user moves the trackpad up or down
 
     static isElementFocusable(element){
@@ -564,7 +564,6 @@ export default class OnscreenKeyboard extends HTMLElement{
                         window.removeEventListener('pointermove', moveCallback, true);
                         window.removeEventListener('pointerup', upCallback, {once:true});
                     }
-                    console.log('move')
                 };
 
                 const upCallback = upEvent => {
