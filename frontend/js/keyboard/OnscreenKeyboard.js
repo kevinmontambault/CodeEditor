@@ -551,6 +551,8 @@ export default class OnscreenKeyboard extends HTMLElement{
                     window.removeEventListener('pointermove', moveCallback, true);
                     window.removeEventListener('pointerup', upCallback, {once:true});
                     clearTimeout(pressTimeout);
+
+                    return movementSum < OnscreenKeyboard.CLICK_MOVE_THRESH;
                 };
 
                 const pressTimeout = setTimeout(checkMovementThreshold, OnscreenKeyboard.KEY_PRESS_DELAY);
@@ -565,7 +567,11 @@ export default class OnscreenKeyboard extends HTMLElement{
                     console.log('move')
                 };
 
-                const upCallback = upEvent => checkMovementThreshold;
+                const upCallback = upEvent => {
+                    if(checkMovementThreshold()){
+                        this.releaseKeyElement(keyElement);
+                    }
+                };
                 
                 window.addEventListener('pointermove', moveCallback, true);
                 window.addEventListener('pointerup', upCallback, {once:true});
